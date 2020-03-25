@@ -1,0 +1,23 @@
+{
+    "outputs": [
+      "alu_out"
+    ],
+    "width": 16,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "mul_out",
+        "type": "mul",
+        "in0": "in0",
+        "in1": "in1"
+      },
+      {
+        "id": "alu_out",
+        "type": "add",
+        "in0": "mul_out",
+        "in1": "in2"
+      }
+    ]
+}
+  

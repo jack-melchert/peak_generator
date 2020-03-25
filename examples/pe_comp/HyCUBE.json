@@ -1,0 +1,28 @@
+{
+    "outputs": [
+      "reg_out"
+    ],
+    "width": 32,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "mul_out",
+        "type": "mul",
+        "in0": ["in_n", "in_e", "in_w", "in_s", "reg_out"],
+        "in1": ["in_n", "in_e", "in_w", "in_s", "reg_out"]
+      },
+      {
+        "id": "alu_out",
+        "type": "alu",
+        "in0": ["in_n", "in_e", "in_w", "in_s", "reg_out"],
+        "in1": ["in_n", "in_e", "in_w", "in_s", "reg_out"]
+      },
+      {
+          "id": "reg_out",
+          "type": "reg",
+          "in": ["alu_out", "mul_out"]
+      }
+    ]
+  }
+  

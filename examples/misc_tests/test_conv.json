@@ -1,0 +1,114 @@
+{
+  "width": 16,
+  "outputs": [
+    60,
+    50,
+    40
+  ],
+  "enable_input_regs": true,
+  "enable_output_regs": true,
+  "modules": [
+    {
+      "type": "mul",
+      "in0": 0,
+      "in1": 1,
+      "id": 20
+    },
+    {
+      "type": "mul",
+      "in0": 2,
+      "in1": 3,
+      "id": 21
+    },
+    {
+      "type": "mul",
+      "in0": 4,
+      "in1": 5,
+      "id": 22
+    },
+    {
+      "type": "mul",
+      "in0": 6,
+      "in1": 7,
+      "id": 23
+    },
+    {
+      "type": "mul",
+      "in0": 8,
+      "in1": 9,
+      "id": 24
+    },
+    {
+      "type": "mul",
+      "in0": 10,
+      "in1": 11,
+      "id": 25
+    },
+    {
+      "type": "mul",
+      "in0": 12,
+      "in1": 13,
+      "id": 26
+    },
+    {
+      "type": "mul",
+      "in0": 14,
+      "in1": 15,
+      "id": 27
+    },
+    {
+      "type": "mul",
+      "in0": 16,
+      "in1": 17,
+      "id": 28
+    },
+    {
+      "type": "alu",
+      "in0": 20,
+      "in1": 21,
+      "id": 30
+    },
+    {
+      "type": "alu",
+      "in0": 22,
+      "in1": 23,
+      "id": 31
+    },
+    {
+      "type": "alu",
+      "in0": 24,
+      "in1": 25,
+      "id": 32
+    },
+    {
+      "type": "alu",
+      "in0": 26,
+      "in1": 27,
+      "id": 33
+    },
+    {
+      "type": "alu",
+      "in0": 30,
+      "in1": 31,
+      "id": 40
+    },
+    {
+      "type": "alu",
+      "in0": 32,
+      "in1": 33,
+      "id": 41
+    },
+    {
+      "type": "alu",
+      "in0": 40,
+      "in1": 41,
+      "id": 50
+    },
+    {
+      "type": "alu",
+      "in0": 50,
+      "in1": 28,
+      "id": 60
+    }
+  ]
+}

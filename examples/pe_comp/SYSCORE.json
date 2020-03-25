@@ -1,0 +1,43 @@
+{
+    "outputs": [
+      ["reg_out_0", "reg_out_1", "reg0", "reg1"], ["reg_out_0", "reg_out_1", "reg0", "reg1"], ["reg_out_0", "reg_out_1", "reg0", "reg1"]
+    ],
+    "width": 24,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "mul_out",
+        "type": "mul",
+        "in0": ["in0", "in1", "in2", "in3", "reg0", "reg1", "reg_out_0", "reg_out_1"],
+        "in1": ["in0", "in1", "in2", "in3", "reg0", "reg1", "reg_out_0", "reg_out_1"]
+      },
+      {
+        "id": "alu_out",
+        "type": "alu",
+        "in0": ["in0", "in1", "in2", "in3", "reg0", "reg1", "reg_out_0", "reg_out_1"],
+        "in1": ["in0", "in1", "in2", "in3", "reg0", "reg1", "reg_out_0", "reg_out_1"]
+      },
+      {
+          "id": "reg_out_0",
+          "type": "reg",
+          "in": ["alu_out", "mul_out"]
+      },
+      {
+          "id": "reg_out_1",
+          "type": "reg",
+          "in": ["alu_out", "mul_out"]
+      },
+      {
+          "id": "reg0",
+          "type": "reg",
+          "in": ["in0", "in1", "in2", "in3"]
+      },
+      {
+          "id": "reg1",
+          "type": "reg",
+          "in": ["in0", "in1", "in2", "in3"]
+      }
+    ]
+  }
+  
