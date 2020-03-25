@@ -2,15 +2,15 @@ from setuptools import setup
 import sys
 
 setup(
-    name='lassen',
+    name='peak_gen',
     version='0.0.1',
-    url='https://github.com/StanfordAHA/lassen',
+    url='https://github.com/jack-melchert/peak_generator',
     license='MIT',
-    maintainer='Priyanka Raina',
-    maintainer_email='praina@stanford.edu',
-    description='PE for the CGRA written in Peak',
+    maintainer='Jackson Melchert',
+    maintainer_email='melchert@stanford.edu',
+    description='Peak generator for DSE project',
     packages=[
-        "lassen",
+        "peak_gen",
     ],
     install_requires=[
         "peak",

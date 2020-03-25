@@ -3,12 +3,12 @@ import magma
 import shutil
 from peak.assembler import Assembler
 from peak import wrap_with_disassembler
-from lassen import arch_closure, inst_arch_closure
-from lassen.arch import read_arch
-from lassen.asm import asm_arch_closure
-from lassen.alu import ALU_t_fc
-from lassen.mul import MUL_t_fc
-from lassen.enables import enables_arch_closure
+from peak_gen import arch_closure, inst_arch_closure
+from peak_gen.arch import read_arch
+from peak_gen.asm import asm_arch_closure
+from peak_gen.alu import ALU_t_fc
+from peak_gen.mul import MUL_t_fc
+from peak_gen.enables import enables_arch_closure
 from hwtypes import Bit, BitVector, Tuple
 import os
 import sys
@@ -18,9 +18,7 @@ class HashableDict(dict):
     def __hash__(self):
         return hash(tuple(sorted(self.keys())))
 
-# with open('examples/conv_3_3_balanced.json') as json_file:
 arch = read_arch(str(sys.argv[1]))
-# import pdb; pdb.set_trace()
 width = arch.input_width
 num_inputs = arch.num_inputs
 

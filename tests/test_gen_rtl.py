@@ -1,5 +1,5 @@
-from lassen.sim import arch_closure
-from lassen.arch import read_arch, graph_arch
+from peak_gen.sim import arch_closure
+from peak_gen.arch import read_arch, graph_arch
 import magma as m
 import sys
 import pdb
