@@ -5,3 +5,4 @@
 -e git+git://github.com/phanrahan/mantle#egg=mantle
 cosa
 -e git+git://github.com/leonardt/hwtypes#egg=hwtypes
+-e git+git://github.com/jack-melchert/ast_tools#egg=ast-tools
