@@ -48,18 +48,9 @@ assembler = _assembler.assemble
 disassembler = _assembler.disassemble
 width = _assembler.width
 layout = _assembler.layout
-PE_magma = PE_fc(magma.get_family())
-instr_magma_type = type(PE_magma.interface.ports[inst_name])
-pe_circuit = wrap_with_disassembler(PE_magma, disassembler, width,
-                                         HashableDict(layout),
-                                         instr_magma_type)
-tester = fault.Tester(pe_circuit, clock=pe_circuit.CLK)
-test_dir = "tests/build"
+
 
 magma.backend.coreir_.CoreIRContextSingleton().reset_instance()
-# magma.compile(f"{test_dir}/WrappedPE", pe_circuit, output="coreir-verilog",
-#               coreir_libs={"float_DW"})
-
 cw_dir = "/cad/synopsys/dc_shell/J-2014.09-SP3/dw/sim_ver/"   # noqa
 CAD_ENV = shutil.which("ncsim") and os.path.isdir(cw_dir)
 
@@ -81,13 +72,13 @@ mux_list_out = [0 for _ in range(arch.num_output_mux)]
 
 Enables_fc = enables_arch_closure(arch)
 Enables = Enables_fc(magma.get_family())
-RegEnList = Tuple[(Bit for _ in range(arch.num_reg))]
+RegEnList = Tuple[(magma.Bit for _ in range(arch.num_reg))]
 
 if arch.num_reg > 0:
-    RegEnListDefault_temp = [Bit(1) for _ in range(arch.num_reg)]
-    RegEnListDefault = Enables(Bit(1), RegEnList(*RegEnListDefault_temp))
+    RegEnListDefault_temp = [magma.Bit(1) for _ in range(arch.num_reg)]
+    RegEnListDefault = Enables(magma.Bit(1), RegEnList(*RegEnListDefault_temp))
 else:
-    RegEnListDefault = Enables(Bit(1))
+    RegEnListDefault = Enables(magma.Bit(1))
 
 mux_list_inst_in0 = []
 mux_list_inst_in1 = []
@@ -206,17 +197,26 @@ def test_func():
         res_pe,_, _ = pe(inst_gen, inputs_to_PE)
         # print("functional test result: ", [res_pe[i].value for i in range(num_outputs)])
 
-    # import pdb; pdb.set_trace()
     # Need to advance clock cycles if regs are enabled
     if (arch.enable_input_regs):
         res_pe,_, _ = pe(inst_gen, inputs_to_PE)
     if (arch.enable_output_regs):
         res_pe,_, _ = pe(inst_gen, inputs_to_PE)
 
+    # FIX THIS ONCE TUPLES WORK
+    res_pe = [res_pe]
     print("functional test result: ", [res_pe[i].value for i in range(num_outputs)])
     assert res_comp == [res_pe[i].value for i in range(num_outputs)] 
 
 def test_rtl():
+    PE_magma = PE_fc(magma.get_family())
+    instr_magma_type = type(PE_magma.interface.ports[inst_name])
+    pe_circuit = wrap_with_disassembler(PE_magma, disassembler, width,
+                                            HashableDict(layout),
+                                            instr_magma_type)
+    tester = fault.Tester(pe_circuit, clock=pe_circuit.CLK)
+    test_dir = "tests/build"
+
     tester.clear()
     # Advance timestep past 0 for fp functional model (see rnd logic)
     tester.circuit.ASYNCRESET = 0

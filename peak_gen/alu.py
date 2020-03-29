@@ -33,7 +33,6 @@ def ALU_t_fc(family):
         unsigned = 0
         signed = 1
         signed = 2
-
     return ALU_t, Signed_t
 
 def overflow(a, b, res):
@@ -60,7 +59,7 @@ def ALU_fc(family):
             def __call__(self, alu: ALU_t, signed_: Signed_t, a: Data, b: Data, d:Bit) -> (Data, Bit, Bit, Bit, Bit, Bit):
                 
 
-                if Bit(signed_ == Signed_t.signed):
+                if signed_ == Signed_t.signed:
                     a_s = SData(a)
                     b_s = SData(b)
                     

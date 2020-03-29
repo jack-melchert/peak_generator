@@ -48,8 +48,6 @@ def inst_arch_closure(arch):
             if arch.num_output_mux > 0:
                 mux_out = mux_list_type_output
 
-
-
             signed= Signed_t     # unsigned or signed
             lut= LUT_t          # LUT operation as a 3-bit LUT
             cond= Cond_t        # Condition code (see cond.py)

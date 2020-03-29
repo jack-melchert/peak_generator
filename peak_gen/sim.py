@@ -227,13 +227,7 @@ def arch_closure(arch):
                 lut_res = self.lut(inst.lut, rd, re, rf)
 
                 # calculate 1-bit result
-                # alu_res_p = Bit(0) 
-                # Z = Bit(0) 
-                # N = Bit(0) 
-                # C = Bit(0) 
-                # V = Bit(0) 
                 res_p = self.cond(inst.cond, alu_res_p, lut_res, Z, N, C, V)
-                # res_p = Bit(0)
                 
                 outputs = []
                 mux_idx_out = 0
@@ -265,6 +259,6 @@ def arch_closure(arch):
                     # return DataOutputList(*outputs), res_p, read_config_data
 
             # print(inspect.getsource(__init__)) 
-            print(inspect.getsource(__call__)) 
+            # print(inspect.getsource(__call__)) 
         return PE
     return PE_fc

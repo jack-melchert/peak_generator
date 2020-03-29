@@ -1,5 +1,5 @@
-from lassen.sim import arch_closure
-from lassen.arch import read_arch
+from peak_gen.sim import arch_closure
+from peak_gen.arch import read_arch
 import sys
 from peak import Peak, family_closure, assemble
 from peak.mapper import ArchMapper
