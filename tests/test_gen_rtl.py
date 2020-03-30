@@ -6,10 +6,9 @@ import pdb
 import pytest
 import glob, os
 
-@pytest.mark.parametrize("arch_file", glob.glob('./**/*.json', recursive=True))
+@pytest.mark.parametrize("arch_file", glob.glob('examples/**/*.json', recursive=True))
 def test_gen_rtl(arch_file):
-    print(arch_file)
     arch = read_arch(arch_file)
     PE_fc = arch_closure(arch)
     PE = PE_fc(m.get_family())
-    m.compile(f"examples/build/PE", PE, output="coreir-verilog")
+    m.compile(f"tests/build/PE", PE, output="coreir-verilog")

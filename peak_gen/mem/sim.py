@@ -1,11 +1,11 @@
 from peak import Peak, name_outputs, PeakNotImplementedError
 from .isa import gen_mem_instr
-from lassen.common import DATAWIDTH
+
 from hwtypes import BitVector
 
 width = 16
 depth = 1024
-Data = BitVector[DATAWIDTH]
+Data = BitVector[width]
 def gen_mem(width=width,depth=depth):
     MemInstr = gen_mem_instr(width,depth)
     Rom = MemInstr.field_dict['rom']

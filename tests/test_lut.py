@@ -1,13 +1,20 @@
 from collections import namedtuple
 import operator
-import lassen.asm as asm
-from lassen import PE_fc, DATAWIDTH
-from hwtypes import SIntVector, UIntVector, BitVector, Bit
+import peak_gen.asm as asm
+from peak_gen.sim import arch_closure
+from peak_gen.arch import read_arch
+from peak_gen.config import config_arch_closure
+from hwtypes import SIntVector, UIntVector, BitVector, Bit, Tuple
 import pytest
 import random
 
+arch = read_arch(str("examples/misc_tests/test_alu.json"))
+PE_fc = arch_closure(arch)
 PE = PE_fc(Bit.get_family())
-Data = BitVector[DATAWIDTH]
+Data = BitVector[arch.input_width]
+config_fc = config_arch_closure(arch)
+config = config_fc(Bit.get_family())
+DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
 
 op = namedtuple("op", ["name", "func"])
 NTESTS = 32
@@ -19,13 +26,15 @@ NTESTS = 32
 ])
 def test_lut_binary(op):
     pe = PE()
-    inst = getattr(asm, f"lut_{op.name}")()
+    inst = getattr(asm, f"lut_{op.name}")(arch)
     for _ in range(NTESTS):
-        b0 = Bit(random.choice([0,1]))
-        b1 = Bit(random.choice([0,1]))
-        b2 = Bit(random.choice([0,1]))
-        data0 = UIntVector.random(DATAWIDTH)
-        _, res_p,_ = pe(inst, data0=data0,bit0=b0,bit1=b1,bit2=b2)
+        config_data_bits = BitVector.random(3)
+        b0 = config_data_bits[0]
+        b1 = config_data_bits[1]
+        b2 = config_data_bits[2]
+        input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
+        config_data_input = config(config_data_bits)
+        _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p==op.func(b1,b2) #Testing from bit1 and bit2 port
 
 @pytest.mark.parametrize("op", [
@@ -33,13 +42,15 @@ def test_lut_binary(op):
 ])
 def test_lut_unary(op):
     pe = PE()
-    inst = getattr(asm, f"lut_{op.name}")()
+    inst = getattr(asm, f"lut_{op.name}")(arch)
     for _ in range(NTESTS):
-        b0 = Bit(random.choice([0,1]))
-        b1 = Bit(random.choice([0,1]))
-        b2 = Bit(random.choice([0,1]))
-        data0 = UIntVector.random(DATAWIDTH)
-        _, res_p,_ = pe(inst, data0=data0,bit0=b0,bit1=b1,bit2=b2)
+        config_data_bits = BitVector.random(3)
+        b0 = config_data_bits[0]
+        b1 = config_data_bits[1]
+        b2 = config_data_bits[2]
+        input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
+        config_data_input = config(config_data_bits)
+        _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p==op.func(b1)
 
 @pytest.mark.parametrize("op", [
@@ -47,27 +58,32 @@ def test_lut_unary(op):
 ])
 def test_lut_ternary(op):
     pe = PE()
-    inst = getattr(asm, f"lut_{op.name}")()
+    inst = getattr(asm, f"lut_{op.name}")(arch)
     for _ in range(NTESTS):
-        sel = Bit(random.choice([0,1]))
-        d0 = Bit(random.choice([0,1]))
-        d1 = Bit(random.choice([0,1]))
-        data0 = UIntVector.random(DATAWIDTH)
-        _, res_p,_ = pe(inst, data0=data0,bit0=d0,bit1=d1,bit2=sel)
+
+        config_data_bits = BitVector.random(3)
+        sel = config_data_bits[2]
+        d0 = config_data_bits[0]
+        d1 = config_data_bits[1]
+
+        input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
+        config_data_input = config(config_data_bits)
+
+        _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p==op.func(sel,d0,d1)
 
 def test_lut():
     pe = PE()
     for _ in range(NTESTS):
         lut_val = BitVector.random(8)
-        inst = asm.lut(lut_val)
-        b0 = Bit(random.choice([0,1]))
-        b1 = Bit(random.choice([0,1]))
-        b2 = Bit(random.choice([0,1]))
-        data0 = UIntVector.random(DATAWIDTH)
-        _, res_p,_ = pe(inst, data0=data0,bit0=b0,bit1=b1,bit2=b2)
+        inst = asm.lut(arch, lut_val)
+
+        config_data_bits = BitVector.random(3)
+        b0 = config_data_bits[0]
+        b1 = config_data_bits[1]
+        b2 = config_data_bits[2]
+        input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
+        config_data_input = config(config_data_bits)
+        _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p== lut_val[int(BitVector[3]([b0,b1,b2]))]
-
-
-
 

@@ -1,5 +1,5 @@
-from lassen.mem import *
-import lassen.mem.asm as asm
+from peak_gen.mem import *
+import peak_gen.mem.asm as asm
 from hwtypes import BitVector, Bit
 import coreir
 import pytest

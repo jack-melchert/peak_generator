@@ -1,21 +1,21 @@
-from lassen.mode import gen_register_mode
-from lassen.alu import ALU_fc
-from lassen.cond import Cond_fc
-from lassen.lut import LUT_fc
-from lassen.sim import PE_fc
+from peak_gen.alu import ALU_fc
+from peak_gen.cond import Cond_fc
+from peak_gen.lut import LUT_fc
+from peak_gen.sim import arch_closure
+from peak_gen.arch import read_arch
 from hwtypes import BitVector
-import magma
+import magma, pytest, glob
 
 def test_cond():
     Cond_magma = Cond_fc(magma.get_family())
 
-def test_mode():
-    rmode_magma = gen_register_mode(BitVector[16], 0)(magma.get_family())
-
 def test_alu():
     ALU_magma = ALU_fc(magma.get_family())
 
-def test_PE():
+@pytest.mark.parametrize("arch_file", glob.glob('examples/**/*.json', recursive=True))
+def test_PE(arch_file):
+    arch = read_arch(str(arch_file))
+    PE_fc = arch_closure(arch)
     PE_magma = PE_fc(magma.get_family())
 
 def test_LUT():

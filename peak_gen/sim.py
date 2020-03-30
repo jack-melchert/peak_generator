@@ -50,6 +50,7 @@ def arch_closure(arch):
 
 
         DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
+        DataInputListDefault = DataInputList(*[Data(0) for _ in range(arch.num_inputs)])
         DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
         ConfigDataList = Tuple[(Data for _ in range(arch.num_const_reg))]
         RegEnList = Tuple[(Bit for _ in range(arch.num_reg))]
@@ -115,18 +116,16 @@ def arch_closure(arch):
             @begin_rewrite()
             @name_outputs(PE_res=Out_Data, res_p=UBit, read_config_data=UData32)
             def __call__(self, inst: Inst, \
-                inputs : DataInputList, \
+                inputs : DataInputList = DataInputListDefault, \
                 enables : Enables = RegEnListDefault, \
                 config_addr : Data8 = Data8(0), \
                 config_data : Config = Config_default, \
                 config_en : Bit = Bit(0) \
             ) -> (Out_Data, Bit, Data32):
-                # Simulate one clock cycle
-
-
+      
                 bit012_addr = (config_addr[:3] == BitVector[3](BIT012_ADDR))
 
-                # input registers
+                # Bit registers
                 reg_we = []
 
                 for i in ast_tools.macros.unroll(range(arch.num_const_reg)):
@@ -144,8 +143,15 @@ def arch_closure(arch):
                 rf_we = rd_we
                 rf_config_wdata = config_data.config_data_bits[2]
 
+                # Setting bit registers
+                rd, rd_rdata = self.regd(rd_config_wdata, rd_we, enables.clk_en)
+                re, re_rdata = self.rege(re_config_wdata, re_we, enables.clk_en)
+                rf, rf_rdata = self.regf(rf_config_wdata, rf_we, enables.clk_en)
+
+
                 signals = {}
 
+                #  Inputs with or without registers
                 if inline(arch.enable_input_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_inputs)):
                         signals[arch.inputs[symbol_interpolate]] = self.input_reg_symbol_interpolate(inputs[symbol_interpolate], enables.clk_en)
@@ -155,33 +161,36 @@ def arch_closure(arch):
                         signals[arch.inputs[i]] = inputs[i]
                         
 
-                rd, rd_rdata = self.regd(rd_config_wdata, rd_we, enables.clk_en)
-                re, re_rdata = self.rege(re_config_wdata, re_we, enables.clk_en)
-                rf, rf_rdata = self.regf(rf_config_wdata, rf_we, enables.clk_en)
-
-
+                # Constant registers
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_const_reg)):
                     signals[arch.const_regs[symbol_interpolate].id], _ = self.const_reg_symbol_interpolate(config_data.config_data[symbol_interpolate], reg_we[symbol_interpolate], enables.clk_en)
 
                 #Calculate read_config_data
                 read_config_data = BV1(rd_rdata).concat(BV1(re_rdata)).concat(BV1(rf_rdata)).concat(BitVector[32-3](0))
 
-
+                # Pipelining registers
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_reg)):
-                    signals[arch.regs[symbol_interpolate].id] = self.regs_symbol_interpolate(Data(0), 0)
+                    signals[arch.regs[symbol_interpolate].id] = self.regs_symbol_interpolate(Data(0), Bit(0))
 
    
                 mux_idx_in0 = 0
                 mux_idx_in1 = 0
                 mul_idx = 0
                 alu_idx = 0
+                alu_res_p = Bit(0)
+                Z = Bit(0)
+                N = Bit(0)
+                C = Bit(0)
+                V = Bit(0)
 
+                # Loop over modules (ALU, MUL, Adders, etc.)
                 for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
 
                     if inline(len(arch.modules[symbol_interpolate].in0) == 1):
                         in0 = signals[arch.modules[symbol_interpolate].in0[0]]  
                     else:
                         in0_mux_select = inst.mux_in0[mux_idx_in0]
+                        in0 = signals[arch.modules[symbol_interpolate].in0[0]]
                         mux_idx_in0 = mux_idx_in0 + 1
                         for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in0))):
                             if in0_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in0))](mux_inputs):
@@ -191,6 +200,7 @@ def arch_closure(arch):
                         in1 = signals[arch.modules[symbol_interpolate].in1[0]]  
                     else:
                         in1_mux_select = inst.mux_in1[mux_idx_in1]
+                        in1 = signals[arch.modules[symbol_interpolate].in1[0]]
                         mux_idx_in1 = mux_idx_in1 + 1
                         for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in1))):
                             if in1_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in1))](mux_inputs):
@@ -208,13 +218,14 @@ def arch_closure(arch):
                         signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
                             
 
+                # Register assignment
                 reg_mux_idx = 0
-
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_reg)):
                     if inline(len(arch.regs[symbol_interpolate].in_) == 1):
                         in_ = signals[arch.regs[symbol_interpolate].in_[0]]  
                     else:
                         in_mux_select = inst.mux_reg[reg_mux_idx]
+                        in_ = signals[arch.regs[symbol_interpolate].in_[0]]
                         reg_mux_idx = reg_mux_idx + 1
 
                         for mux_inputs in ast_tools.macros.unroll(range(len(arch.regs[symbol_interpolate].in_))):
@@ -229,14 +240,14 @@ def arch_closure(arch):
                 # calculate 1-bit result
                 res_p = self.cond(inst.cond, alu_res_p, lut_res, Z, N, C, V)
                 
+                # Output assignment
                 outputs = []
                 mux_idx_out = 0
                 for out_index in ast_tools.macros.unroll(range(arch.num_outputs)):
                     if inline(len(arch.outputs[out_index]) == 1):
-                        output_temp = signals[arch.outputs[out_index][0]]
-                        outputs.append(output_temp)
+                        outputs.append(signals[arch.outputs[out_index][0]])
                     else:
-                        # output_temp = signals[arch.outputs[out_index][0]]
+                        output_temp = signals[arch.outputs[out_index][0]]
                         out_mux_select = inst.mux_out[mux_idx_out]
                         mux_idx_out = mux_idx_out + 1
                         for mux_inputs in ast_tools.macros.unroll(range(len(arch.outputs[out_index]))):
@@ -254,6 +265,7 @@ def arch_closure(arch):
 
                     # return 16-bit result, 1-bit result
                     # return DataOutputList(*outputs_from_reg), res_p, read_config_data
+                    return outputs_from_reg[0], res_p, read_config_data
                 else:
                     return outputs[0], res_p, read_config_data
                     # return DataOutputList(*outputs), res_p, read_config_data
