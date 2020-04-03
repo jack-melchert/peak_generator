@@ -1,6 +1,9 @@
+dist: xenial
 language: python
 python:
 - 3.7.5
+cache:
+  apt: true
 addons:
   apt:
     packages:
@@ -15,7 +18,7 @@ install:
 - pip install python-coveralls
 - pip install -e .
 script:
-- python scripts/gen_rtl.py examples/misc_tests/test_alu.json
+- pytest --cov=peak_gen tests/
 after_success:
 - coveralls
 
