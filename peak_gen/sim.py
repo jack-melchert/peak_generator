@@ -17,12 +17,13 @@ from .arch import *
 from .mul import MUL_fc
 from .config import config_arch_closure
 from .enables import enables_arch_closure
+from peak.assembler import Assembler, AssembledADT
 
 def arch_closure(arch):
     @family_closure
     def PE_fc(family):
         BitVector = family.BitVector
-
+    
         #Hack
         def BV1(bit):
             return bit.ite(family.BitVector[1](1), family.BitVector[1](0))
@@ -51,7 +52,6 @@ def arch_closure(arch):
 
         DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
         DataInputListDefault = DataInputList(*[Data(0) for _ in range(arch.num_inputs)])
-        DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
         ConfigDataList = Tuple[(Data for _ in range(arch.num_const_reg))]
         RegEnList = Tuple[(Bit for _ in range(arch.num_reg))]
 
@@ -68,8 +68,16 @@ def arch_closure(arch):
             Config_default = Config(family.BitVector[3](0))
 
 
+        if family == m.get_family():
+            DataOutputList = m.Tuple[(Out_Data for _ in range(arch.num_outputs))]
+            Out_constructor = DataOutputList
+        else:
+            DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
+            DataOutputList_t = AssembledADT[DataOutputList, Assembler, family.BitVector]
+            Out_constructor = DataOutputList_t.from_fields
+
         @assemble(family, locals(), globals())
-        class PE(Peak):
+        class PE(Peak, typecheck=True):
             @end_rewrite()
             @if_inline()
             @loop_unroll()
@@ -114,14 +122,14 @@ def arch_closure(arch):
             @loop_unroll()
             @loop_unroll()
             @begin_rewrite()
-            @name_outputs(PE_res=Out_Data, res_p=UBit, read_config_data=UData32)
+            @name_outputs(PE_res=DataOutputList, res_p=UBit, read_config_data=UData32)
             def __call__(self, inst: Inst, \
                 inputs : DataInputList = DataInputListDefault, \
                 enables : Enables = RegEnListDefault, \
                 config_addr : Data8 = Data8(0), \
                 config_data : Config = Config_default, \
                 config_en : Bit = Bit(0) \
-            ) -> (Out_Data, Bit, Data32):
+            ) -> (DataOutputList, Bit, Data32):
       
                 bit012_addr = (config_addr[:3] == BitVector[3](BIT012_ADDR))
 
@@ -264,11 +272,10 @@ def arch_closure(arch):
                         outputs_from_reg.append(temp)
 
                     # return 16-bit result, 1-bit result
-                    # return DataOutputList(*outputs_from_reg), res_p, read_config_data
-                    return outputs_from_reg[0], res_p, read_config_data
+                    return Out_constructor(*outputs_from_reg), res_p, read_config_data
+                    
                 else:
-                    return outputs[0], res_p, read_config_data
-                    # return DataOutputList(*outputs), res_p, read_config_data
+                    return Out_constructor(*outputs), res_p, read_config_data
 
             # print(inspect.getsource(__init__)) 
             # print(inspect.getsource(__call__)) 

@@ -28,7 +28,7 @@ def test_add():
 
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('cvc4')
+    solution = ir_mapper.solve('z3')
     pretty_print_binding(solution.ibinding)
     assert solution.solved
 

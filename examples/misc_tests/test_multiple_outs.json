@@ -9,19 +9,15 @@
       {
         "id": "mul_out",
         "type": "mul",
-        "in0": ["in0", "in1"],
+        "in0": "in0",
         "in1": "in1"
       },
       {
         "id": "alu_out",
         "type": "alu",
         "in0": "in0",
-        "in1": "const"
-      },
-      {
-        "id": "const",
-        "type": "const"
+        "in1": "in1"
       }
     ]
-  }
+}
   

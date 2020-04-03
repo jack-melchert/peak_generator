@@ -47,7 +47,7 @@ def test_4_bit_add(arch_file):
 
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('cvc4')
+    solution = ir_mapper.solve('z3')
     pretty_print_binding(solution.ibinding)
     assert solution.solved
 
@@ -65,7 +65,7 @@ def test_no_mapping(arch_file):
 
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('cvc4')
+    solution = ir_mapper.solve('z3')
     assert not solution.solved
 
     toc = time.perf_counter()
@@ -82,7 +82,7 @@ def test_add_all_files(arch_file):
 
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('cvc4')
+    solution = ir_mapper.solve('z3')
     pretty_print_binding(solution.ibinding)
     assert solution.solved
 
@@ -103,7 +103,7 @@ def test_alu_alu(arch_file):
 
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('cvc4')
+    solution = ir_mapper.solve('z3')
     pretty_print_binding(solution.ibinding)
     assert solution.solved
 
