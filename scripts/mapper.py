@@ -9,11 +9,13 @@ import time
 @family_closure
 def Add_fc(family):
     Data = family.BitVector[16]
-    Data32 = family.BitVector[32]
+    Bit = family.Bit
     @assemble(family, locals(), globals())
     class Add(Peak):
         def __call__(self, a:Data, b:Data) -> Data:
+
             return a + b
+          
     return Add
 
 def test_add():

@@ -31,7 +31,6 @@ def MUL_t_fc(family):
     class Signed_t(Enum):
         unsigned = 0
         signed = 1
-        signed = 2
 
     return MUL_t, Signed_t
 

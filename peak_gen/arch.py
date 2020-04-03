@@ -89,6 +89,15 @@ def read_arch(json_file_str):
             elif module_json['type'] == "const":
                 num_const_reg += 1
                 new_const_reg = const_reg(module_json['id'], module_json.get('width', width))
+
+                if new_const_reg.id in inputs:
+                    inputs.remove(new_const_reg.id)
+
+                if new_const_reg.id in ids:
+                    raise ValueError('Two modules with the same ID')
+                else:
+                    ids.append(new_const_reg.id)
+
                 const_regs.append(new_const_reg)
             
             else:
@@ -167,9 +176,8 @@ def graph_arch(arch: Arch):
     outputs_subgraph = Digraph()
     inputs_subgraph.attr(rank='min')
     
-    inputs_subgraph.attr('node', shape='circle')
     for input in arch.inputs:
-        inputs_subgraph.node(str(input), str(input))
+        inputs_subgraph.node(str(input), str(input), shape='circle')
 
     graph.subgraph(inputs_subgraph)
 
@@ -178,18 +186,14 @@ def graph_arch(arch: Arch):
 
     for module in arch.modules:
         if module.type_ == "alu":
-            pe_subgraph.attr('node', shape='box')
-            pe_subgraph.node(str(module.id), "alu")
-        if module.type_ == "add":
-            pe_subgraph.attr('node', shape='box')
-            pe_subgraph.node(str(module.id), "add")
+            pe_subgraph.node(str(module.id), "alu", shape='box')
+        elif module.type_ == "add":
+            pe_subgraph.node(str(module.id), "add", shape='box')
         elif module.type_ == "mul":
-            pe_subgraph.attr('node', shape='box')
-            pe_subgraph.node(str(module.id), "mul")
+            pe_subgraph.node(str(module.id), "mul", shape='box')
         
         if len(module.in0) > 1:
-            pe_subgraph.attr('node', shape='invtrapezium')
-            pe_subgraph.node("mux_in0_" + str(mux_in0_idx), "mux_in0_" + str(mux_in0_idx))
+            pe_subgraph.node("mux_in0_" + str(mux_in0_idx), "mux_in0", shape='invtrapezium')
 
             for in0 in module.in0:
                 pe_subgraph.edge(str(in0), "mux_in0_" + str(mux_in0_idx))
@@ -200,8 +204,7 @@ def graph_arch(arch: Arch):
             pe_subgraph.edge(str(module.in0[0]), str(module.id))
     
         if len(module.in1) > 1:
-            pe_subgraph.attr('node', shape='invtrapezium')
-            pe_subgraph.node("mux_in1_" + str(mux_in1_idx), "mux_in1_" + str(mux_in1_idx))
+            pe_subgraph.node("mux_in1_" + str(mux_in1_idx), "mux_in1", shape='invtrapezium')
 
             for in1 in module.in1:
                 pe_subgraph.edge(str(in1), "mux_in1_" + str(mux_in1_idx))
@@ -215,12 +218,10 @@ def graph_arch(arch: Arch):
     # import pdb; pdb.set_trace()
     mux_reg_idx = 0
     for reg in arch.regs:
-        pe_subgraph.attr('node', shape='box')
-        pe_subgraph.node(str(reg.id), "reg")
+        pe_subgraph.node(str(reg.id), "reg", shape='box')
 
         if len(reg.in_) > 1:
-            pe_subgraph.attr('node', shape='invtrapezium')
-            pe_subgraph.node("mux_reg_" + str(mux_reg_idx), "mux_reg_" + str(mux_reg_idx))
+            pe_subgraph.node("mux_reg_" + str(mux_reg_idx), "mux_reg", shape='invtrapezium')
 
             for in_ in reg.in_:
                 pe_subgraph.edge(str(in_), "mux_reg_" + str(mux_reg_idx))
@@ -232,21 +233,17 @@ def graph_arch(arch: Arch):
 
 
     for reg in arch.const_regs:
-        pe_subgraph.attr('node', shape='box')
-        pe_subgraph.node(str(reg.id), "const")
+        pe_subgraph.node(str(reg.id), "const", shape='box')
 
     graph.subgraph(pe_subgraph)
 
     mux_out_idx = 0
     outputs_subgraph.attr(rank='max')
-    outputs_subgraph.attr('node', shape='circle')
     for i, output in enumerate(arch.outputs):
         
-        outputs_subgraph.node("out_" + str(i), "out" + str(i))
-        outputs_subgraph.attr('node', shape='circle')
+        outputs_subgraph.node("out_" + str(i), "out" + str(i), shape='circle')
         if len(output) > 1:
-            graph.attr('node', shape='invtrapezium')
-            graph.node("mux_out_" + str(mux_out_idx), "mux_out_" + str(mux_out_idx))
+            graph.node("mux_out_" + str(mux_out_idx), "mux_out", shape='invtrapezium')
 
             for out in output:
                 graph.edge(str(out), "mux_out_" + str(mux_out_idx))

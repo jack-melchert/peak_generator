@@ -61,12 +61,12 @@ def arch_closure(arch):
         else:
             RegEnListDefault = Enables(Bit(1))
 
-
         Config_default_list = [Data(0) for _ in range(arch.num_const_reg)]
         if (arch.num_const_reg > 0):
             Config_default = Config(family.BitVector[3](0), ConfigDataList(*Config_default_list))
         else:
             Config_default = Config(family.BitVector[3](0))
+
 
         @assemble(family, locals(), globals())
         class PE(Peak):

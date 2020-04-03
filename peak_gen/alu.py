@@ -3,8 +3,6 @@ from hwtypes import Enum as Enum_hw
 from magma import Enum as Enum_m
 import magma
 from peak.mapper.utils import rebind_type
-from .common import DATAWIDTH
-import magma
 
 
 @family_closure
@@ -13,6 +11,7 @@ def ALU_t_fc(family):
         Enum = Enum_m
     else:
         Enum = Enum_hw
+
     class ALU_t(Enum):
         Add = 0
         Sub = 1
@@ -32,7 +31,7 @@ def ALU_t_fc(family):
     class Signed_t(Enum):
         unsigned = 0
         signed = 1
-        signed = 2
+  
     return ALU_t, Signed_t
 
 def overflow(a, b, res):
