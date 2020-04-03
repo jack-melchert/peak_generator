@@ -15,7 +15,7 @@ install:
 - pip install python-coveralls
 - pip install -e .
 script:
-- python scripts/gen_rtl.py examples/misc_tests/test_alu.py
+- python scripts/gen_rtl.py examples/misc_tests/test_alu.json
 after_success:
 - coveralls
 
