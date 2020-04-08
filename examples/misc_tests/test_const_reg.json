@@ -7,6 +7,10 @@
     "enable_output_regs": false,
     "modules": [
       {
+        "id": "const",
+        "type": "const"
+      },
+      {
         "id": "mul_out",
         "type": "mul",
         "in0": ["in0", "in1"],
@@ -17,10 +21,6 @@
         "type": "alu",
         "in0": "in0",
         "in1": "const"
-      },
-      {
-        "id": "const",
-        "type": "const"
       }
     ]
   }

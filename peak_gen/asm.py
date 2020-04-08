@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from .isa import inst_arch_closure
-from .alu import ALU_t_fc
-from .mul import MUL_t_fc
-from .cond import Cond_t_fc
+from .alu import ALU_t
+from .mul import MUL_t
+from .cond import Cond_t
 from hwtypes import BitVector, Bit
 import magma as m
 
@@ -17,8 +17,6 @@ def asm_arch_closure(arch):
     Data = BitVector[arch.input_width]
     LUT_t = Inst.lut
     Cond_t = Inst.cond
-    ALU_t, _ = ALU_t_fc(Bit.get_family())
-    MUL_t, _ = MUL_t_fc(Bit.get_family())
 
     if arch.num_alu > 0:
         ALU_t_list_type = Inst.alu
@@ -84,7 +82,6 @@ def asm_arch_closure(arch):
     return gen_inst
 
 def lut(arch, val):
-    Cond_t = Cond_t_fc(Bit.get_family())
     return asm_arch_closure(arch)(lut=val,cond=Cond_t.LUT)
 
 #Using bit1 and bit2 since bit0 can be used in the ALU

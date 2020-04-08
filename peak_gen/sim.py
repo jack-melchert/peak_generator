@@ -2,6 +2,7 @@ from peak import Peak, family_closure, name_outputs, assemble, gen_register
 from hwtypes import Tuple
 from functools import lru_cache
 import magma as m
+import hwtypes
 import ast_tools
 from ast_tools.passes import begin_rewrite, end_rewrite, loop_unroll, if_inline
 from ast_tools.macros import inline
@@ -68,13 +69,20 @@ def arch_closure(arch):
             Config_default = Config(family.BitVector[3](0))
 
 
+        # print(family)
         if family == m.get_family():
             DataOutputList = m.Tuple[(Out_Data for _ in range(arch.num_outputs))]
             Out_constructor = DataOutputList
-        else:
+        elif family == hwtypes.SMTBit.get_family():
+        # else:
             DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
             DataOutputList_t = AssembledADT[DataOutputList, Assembler, family.BitVector]
             Out_constructor = DataOutputList_t.from_fields
+        elif family == hwtypes.BitVector.get_family():
+            DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
+            Out_constructor = DataOutputList
+
+
 
         @assemble(family, locals(), globals())
         class PE(Peak, typecheck=True):
@@ -122,7 +130,7 @@ def arch_closure(arch):
             @loop_unroll()
             @loop_unroll()
             @begin_rewrite()
-            @name_outputs(PE_res=DataOutputList, res_p=UBit, read_config_data=UData32)
+            # @name_outputs(PE_res=DataOutputList, res_p=UBit, read_config_data=UData32)
             def __call__(self, inst: Inst, \
                 inputs : DataInputList = DataInputListDefault, \
                 enables : Enables = RegEnListDefault, \

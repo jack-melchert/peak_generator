@@ -8,7 +8,7 @@ from hwtypes import SIntVector, UIntVector, BitVector, Bit, Tuple
 import pytest
 import random
 
-arch = read_arch(str("examples/misc_tests/test_alu.json"))
+arch = read_arch(str("examples/misc_tests/test_add.json"))
 PE_fc = arch_closure(arch)
 PE = PE_fc(Bit.get_family())
 Data = BitVector[arch.input_width]
@@ -87,3 +87,4 @@ def test_lut():
         _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p== lut_val[int(BitVector[3]([b0,b1,b2]))]
 
+test_lut()

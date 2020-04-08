@@ -71,7 +71,7 @@ def test_no_mapping(arch_file):
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")
 
-@pytest.mark.parametrize("arch_file", ["examples/misc_tests/test_add.json", "examples/misc_tests/test_alu.json", "examples/mapper_tests/test_add_alu.json", "examples/mapper_tests/test_mul_alu.json", "examples/mapper_tests/test_mul_add.json"])
+@pytest.mark.parametrize("arch_file", ["examples/misc_tests/test_add.json", "examples/misc_tests/test_alu.json", "examples/mapper_tests/test_add_alu.json", "examples/mapper_tests/test_mul_add.json"])
 def test_add_all_files(arch_file):
     arch = read_arch(str(arch_file))
     PE_fc = arch_closure(arch)
@@ -92,7 +92,7 @@ def test_add_all_files(arch_file):
 
 # Really long
 @pytest.mark.skip
-@pytest.mark.parametrize("arch_file", ["examples/mapper_tests/test_alu_alu.json"])
+@pytest.mark.parametrize("arch_file", ["examples/mapper_tests/test_alu_alu.json", "examples/mapper_tests/test_mul_alu.json"])
 def test_alu_alu(arch_file):
     arch = read_arch(str(arch_file))
     PE_fc = arch_closure(arch)

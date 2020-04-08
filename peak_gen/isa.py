@@ -1,7 +1,7 @@
-from .cond import Cond_t_fc
+from .cond import Cond_t
 from .lut import LUT_t_fc
-from .alu import ALU_t_fc
-from .mul import MUL_t_fc
+from .alu import ALU_t, Signed_t
+from .mul import MUL_t
 from .common import DATAWIDTH
 from peak import Const, family_closure
 from hwtypes import Tuple, Product
@@ -16,9 +16,6 @@ def inst_arch_closure(arch):
         Bit = family.Bit
 
         LUT_t, _ = LUT_t_fc(family)
-        ALU_t, Signed_t = ALU_t_fc(family)
-        Cond_t = Cond_t_fc(family)
-        MUL_t,_ = MUL_t_fc(family)
 
         ALU_t_list_type = Tuple[(ALU_t for _ in range(arch.num_alu))]
         MUL_t_list_type = Tuple[(MUL_t for _ in range(arch.num_mul))]

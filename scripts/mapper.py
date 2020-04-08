@@ -8,7 +8,7 @@ import time
 
 @family_closure
 def Add_fc(family):
-    Data = family.BitVector[16]
+    Data = family.BitVector[2]
     Bit = family.Bit
     @assemble(family, locals(), globals())
     class Add(Peak):
@@ -28,7 +28,7 @@ def test_add():
 
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('z3')
+    solution = ir_mapper.solve('cvc4')
     pretty_print_binding(solution.ibinding)
     assert solution.solved
 
