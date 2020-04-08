@@ -45,9 +45,10 @@ def MUL_fc(family):
                 else:
                     a_u = UData(a)
                     b_u = UData(b)
-                    mula, mulb = UDataMul(a_u.zext(in_width)), UDataMul(b_u.zext(in_width))
+                    mula, mulb = a_u.zext(in_width), b_u.zext(in_width)
+                    
                 mul = mula * mulb
-                res=0
+                # res=0
 
                 if inline(out_width == in_width):
                     if instr == MUL_t.Mult0:

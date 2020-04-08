@@ -40,7 +40,7 @@ def test_pe_gen(arch_file):
     PE_bv = PE_fc(Bit.get_family())
 
 
-    Data = BitVector[width]
+    Data = magma.BitVector[width]
 
     # create these variables in global space so that we can reuse them easily
     inst_name = 'inst'
@@ -207,7 +207,7 @@ def test_pe_gen(arch_file):
         print("functional test result: ", [res_pe[i].value for i in range(num_outputs)])
         assert Data(res_comp) == [res_pe[i].value for i in range(num_outputs)] 
 
-# def test_rtl():
+
 #     PE_magma = PE_fc(magma.get_family())
 #     instr_magma_type = type(PE_magma.interface.ports[inst_name])
 #     pe_circuit = wrap_with_disassembler(PE_magma, disassembler, width,
@@ -228,10 +228,10 @@ def test_pe_gen(arch_file):
 #     # import pdb; pdb.set_trace()
 #     tester.circuit.inst = assembler(inst_gen)
 #     tester.circuit.CLK = 0
+#     tester.circuit.inputs = inputs_to_PE
 #     tester.circuit.enables = RegEnListDefault
 
 #     # import pdb; pdb.set_trace()
-#     tester.circuit.inputs = inputs_to_PE
 #     tester.eval()
 
 #     if (arch.enable_input_regs):
@@ -270,9 +270,7 @@ def test_pe_gen(arch_file):
 #                                flags=['-Wno-UNUSED', '-Wno-PINNOCONNECT'],
 #                                skip_compile=False,
 #                                skip_verilator=False)
-# test_func()
-# test_rtl()
-
-# print("SUCCESS: Passed all tests")
 
 
+
+# test_pe_gen("examples/misc_tests/lassen.json")
