@@ -1,4 +1,4 @@
-from peak import Peak, name_outputs, family_closure, assemble
+from peak import Peak, name_outputs, family_closure, assemble, Const
 from hwtypes import Enum
 import magma
 from peak.mapper.utils import rebind_type

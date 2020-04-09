@@ -1,4 +1,4 @@
-from peak import Peak, family_closure, name_outputs, assemble, gen_register
+from peak import Peak, family_closure, name_outputs, assemble, gen_register, Const
 from hwtypes import Tuple
 from functools import lru_cache
 import magma as m
@@ -131,7 +131,7 @@ def arch_closure(arch):
             @loop_unroll()
             @begin_rewrite()
             # @name_outputs(PE_res=DataOutputList, res_p=UBit, read_config_data=UData32)
-            def __call__(self, inst: Inst, \
+            def __call__(self, inst: Const(Inst), \
                 inputs : DataInputList = DataInputListDefault, \
                 enables : Enables = RegEnListDefault, \
                 config_addr : Data8 = Data8(0), \
