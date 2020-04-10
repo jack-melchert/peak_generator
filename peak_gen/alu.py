@@ -1,7 +1,8 @@
-from peak import Peak, name_outputs, family_closure, assemble
+from peak import Peak, name_outputs, family_closure, Const
 from hwtypes import Enum
 import magma
 from peak.mapper.utils import rebind_type
+from peak.family import AbstractFamily
 
 
 class ALU_t(Enum):
@@ -30,7 +31,7 @@ def overflow(a, b, res):
     return (msb_a & msb_b & ~N) | (~msb_a & ~msb_b & N)
 
 @family_closure
-def ALU_fc(family):
+def ALU_fc(family : AbstractFamily):
     def ALU_bw(width):
 
         Data = family.BitVector[width]
@@ -40,7 +41,7 @@ def ALU_fc(family):
         UInt = family.Unsigned
         UData = UInt[width]
 
-        @assemble(family, locals(), globals())
+        @family.assemble(locals(), globals())
         class ALU(Peak):
             @name_outputs(res=Data, res_p=Bit, Z=Bit, N=Bit, C=Bit, V=Bit)
             def __call__(self, alu: ALU_t, signed_: Signed_t, a: Data, b: Data, d:Bit) -> (Data, Bit, Bit, Bit, Bit, Bit):

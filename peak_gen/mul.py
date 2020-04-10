@@ -1,11 +1,11 @@
-from peak import Peak, name_outputs, family_closure, assemble
+from peak import Peak, name_outputs, family_closure
 from peak.mapper.utils import rebind_type
 from functools import lru_cache
 from hwtypes import Enum
 import magma
 from ast_tools.passes import begin_rewrite, end_rewrite, loop_unroll, if_inline
 from ast_tools.macros import inline
-
+from peak.family import AbstractFamily
 
 
 class MUL_t(Enum):
@@ -19,7 +19,7 @@ class Signed_t(Enum):
     signed = 1
 
 @family_closure
-def MUL_fc(family):
+def MUL_fc(family : AbstractFamily):
     def MUL_bw(in_width, out_width):
 
         Data_out = family.BitVector[out_width]
@@ -29,8 +29,9 @@ def MUL_fc(family):
         UInt = family.Unsigned
         UData = UInt[in_width]
         UDataMul = UInt[2*in_width]
+        Bit = family.Bit
 
-        @assemble(family, locals(), globals())
+        @family.assemble(locals(), globals())
         class MUL(Peak):
             @end_rewrite()
             @if_inline()

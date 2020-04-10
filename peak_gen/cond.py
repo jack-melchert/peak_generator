@@ -1,6 +1,7 @@
-from peak import Peak, family_closure, name_outputs, assemble
+from peak import Peak, family_closure, name_outputs
 from hwtypes import Enum 
 import magma
+from peak.family import AbstractFamily
 """
 Condition code field - selects which 1-bit result is retuned
 """
@@ -43,9 +44,9 @@ class Cond_t(Enum):
 # and the flags Z, N, C, V
 #
 @family_closure
-def Cond_fc(family):
+def Cond_fc(family : AbstractFamily):
     Bit = family.Bit
-    @assemble(family, locals(), globals())
+    @family.assemble(locals(), globals())
     class Cond(Peak):
         @name_outputs(cond=Bit)
         def __call__(self, code: Cond_t, alu: Bit, lut: Bit, Z: Bit, N: Bit, C: Bit, V: Bit) \

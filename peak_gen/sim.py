@@ -1,4 +1,4 @@
-from peak import Peak, family_closure, name_outputs, assemble, gen_register
+from peak import Peak, family_closure, name_outputs, gen_register
 from hwtypes import Tuple
 from functools import lru_cache
 import magma as m
@@ -19,15 +19,18 @@ from .mul import MUL_fc
 from .config import config_arch_closure
 from .enables import enables_arch_closure
 from peak.assembler import Assembler, AssembledADT
+from peak.family import AbstractFamily
+import peak 
 
 def arch_closure(arch):
     @family_closure
-    def PE_fc(family):
+    def PE_fc(family: AbstractFamily):
         BitVector = family.BitVector
     
         #Hack
         def BV1(bit):
             return bit.ite(family.BitVector[1](1), family.BitVector[1](0))
+        
         Data = family.BitVector[arch.input_width]
         Out_Data = family.BitVector[arch.output_width]
         UBit = family.Unsigned[1]
@@ -68,23 +71,21 @@ def arch_closure(arch):
         else:
             Config_default = Config(family.BitVector[3](0))
 
-
-        # print(family)
-        if family == m.get_family():
+   
+        if family == peak.family.MagmaFamily():
             DataOutputList = m.Tuple[(Out_Data for _ in range(arch.num_outputs))]
             Out_constructor = DataOutputList
-        elif family == hwtypes.SMTBit.get_family():
-        # else:
+        elif family == peak.family.SMTFamily():
             DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
             DataOutputList_t = AssembledADT[DataOutputList, Assembler, family.BitVector]
             Out_constructor = DataOutputList_t.from_fields
-        elif family == hwtypes.BitVector.get_family():
+        elif family == peak.family.PyFamily():
             DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
             Out_constructor = DataOutputList
 
 
 
-        @assemble(family, locals(), globals())
+        @family.assemble(locals(), globals())
         class PE(Peak, typecheck=True):
             @end_rewrite()
             @if_inline()
