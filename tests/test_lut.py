@@ -7,13 +7,14 @@ from peak_gen.config import config_arch_closure
 from hwtypes import SIntVector, UIntVector, BitVector, Bit, Tuple
 import pytest
 import random
+from peak import family
 
 arch = read_arch(str("examples/misc_tests/test_add.json"))
 PE_fc = arch_closure(arch)
-PE = PE_fc(Bit.get_family())
+PE = PE_fc(family.PyFamily())
 Data = BitVector[arch.input_width]
 config_fc = config_arch_closure(arch)
-config = config_fc(Bit.get_family())
+config = config_fc(family.PyFamily())
 DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
 
 op = namedtuple("op", ["name", "func"])

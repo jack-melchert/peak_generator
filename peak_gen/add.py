@@ -1,7 +1,7 @@
-from peak import Peak, name_outputs, family_closure, assemble
+from peak import Peak, name_outputs, family_closure
 from .common import DATAWIDTH
 import magma
-
+from peak.family import AbstractFamily
 
 def overflow(a, b, res):
     msb_a = a[-1]
@@ -10,7 +10,7 @@ def overflow(a, b, res):
     return (msb_a & msb_b & ~N) | (~msb_a & ~msb_b & N)
 
 @family_closure
-def ADD_fc(family):
+def ADD_fc(family : AbstractFamily):
     def ADD_bw(width):
 
         Data = family.BitVector[width]
@@ -18,7 +18,7 @@ def ADD_fc(family):
         UInt = family.Unsigned
         UData = UInt[width]
 
-        @assemble(family, locals(), globals())
+        @family.assemble(locals(), globals())
         class ADD(Peak):
             @name_outputs(res=Data, res_p=Bit, Z=Bit, N=Bit, C=Bit, V=Bit)
             def __call__(self, a: Data, b: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):

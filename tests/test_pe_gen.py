@@ -10,6 +10,7 @@ from peak_gen.alu import ALU_t, Signed_t
 from peak_gen.mul import MUL_t
 from peak_gen.enables import enables_arch_closure
 from hwtypes import Bit, BitVector, Tuple
+from peak import family
 import os
 import sys
 import random
@@ -31,13 +32,13 @@ def test_pe_gen(arch_file):
 
     num_alu = arch.num_alu
     Inst_fc = inst_arch_closure(arch)
-    Inst = Inst_fc(Bit.get_family())
+    Inst = Inst_fc(family.PyFamily())
     Cond_t = Inst.cond
     gen_inst = asm_arch_closure(arch)
 
 
     PE_fc = arch_closure(arch)
-    PE_bv = PE_fc(Bit.get_family())
+    PE_bv = PE_fc(family.PyFamily())
 
 
     Data = magma.BitVector[width]
@@ -74,7 +75,7 @@ def test_pe_gen(arch_file):
     mux_list_out = [0 for _ in range(arch.num_output_mux)]
 
     Enables_fc = enables_arch_closure(arch)
-    Enables = Enables_fc(magma.get_family())
+    Enables = Enables_fc(family.MagmaFamily())
     RegEnList = Tuple[(magma.Bit for _ in range(arch.num_reg))]
 
     if arch.num_reg > 0:
@@ -208,7 +209,7 @@ def test_pe_gen(arch_file):
         assert Data(res_comp) == [res_pe[i].value for i in range(num_outputs)] 
 
 
-#     PE_magma = PE_fc(magma.get_family())
+#     PE_magma = PE_fc(family.MagmaFamily())
 #     instr_magma_type = type(PE_magma.interface.ports[inst_name])
 #     pe_circuit = wrap_with_disassembler(PE_magma, disassembler, width,
 #                                             HashableDict(layout),

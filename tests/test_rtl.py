@@ -5,19 +5,20 @@ from peak_gen.sim import arch_closure
 from peak_gen.arch import read_arch
 from hwtypes import BitVector
 import magma, pytest, glob
+from peak import family
 
 def test_cond():
-    Cond_magma = Cond_fc(magma.get_family())
+    Cond_magma = Cond_fc(family.MagmaFamily())
 
 def test_alu():
-    ALU_magma = ALU_fc(magma.get_family())
+    ALU_magma = ALU_fc(family.MagmaFamily())
 
 @pytest.mark.parametrize("arch_file", glob.glob('examples/**/*.json', recursive=True))
 def test_PE(arch_file):
     arch = read_arch(str(arch_file))
     PE_fc = arch_closure(arch)
-    PE_magma = PE_fc(magma.get_family())
+    PE_magma = PE_fc(family.MagmaFamily())
 
 def test_LUT():
-    LUT_magma = LUT_fc(magma.get_family())
+    LUT_magma = LUT_fc(family.MagmaFamily())
 

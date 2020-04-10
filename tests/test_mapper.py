@@ -1,35 +1,37 @@
 from peak_gen.sim import arch_closure
 from peak_gen.arch import read_arch
 import sys
-from peak import Peak, family_closure, assemble
+from peak import Peak, family_closure
 from peak.mapper import ArchMapper
 from peak.mapper.utils import pretty_print_binding
 import time, pytest
+from peak import family
+from peak.family import AbstractFamily
 
 @family_closure
-def Add_fc(family):
+def Add_fc(family : AbstractFamily):
     Data = family.BitVector[16]
     Data32 = family.BitVector[32]
-    @assemble(family, locals(), globals())
+    @family.assemble(locals(), globals())
     class Add(Peak):
         def __call__(self, a:Data, b:Data) -> Data:
             return a + b
     return Add
 
 @family_closure
-def Add4_fc(family):
+def Add4_fc(family : AbstractFamily):
     Data = family.BitVector[4]
-    @assemble(family, locals(), globals())
+    @family.assemble(locals(), globals())
     class Add4(Peak):
         def __call__(self, a:Data, b:Data) -> Data:
             return a + b
     return Add4
 
 @family_closure
-def Mul_Add_fc(family):
+def Mul_Add_fc(family : AbstractFamily):
     Data = family.BitVector[16]
     Data32 = family.BitVector[32]
-    @assemble(family, locals(), globals())
+    @family.assemble(locals(), globals())
     class Mul_Add(Peak):
         def __call__(self, a:Data, b:Data, c:Data) -> Data:
             return a * b + c
