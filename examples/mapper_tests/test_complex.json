@@ -1,6 +1,6 @@
 {
     "outputs": [
-        "2_out"
+        ["1_out", "2_out"]
     ],
     "input_width": 16,
     "output_width": 16,
@@ -17,7 +17,7 @@
         "id": "2_out",
         "type": "alu",
         "in0": "in2",
-        "in1": "1_out"
+        "in1": "in3"
         }
     ]
 }

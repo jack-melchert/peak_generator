@@ -2,8 +2,8 @@
     "outputs": [
         "2_out"
     ],
-    "input_width": 16,
-    "output_width": 16,
+    "input_width": 6,
+    "output_width": 6,
     "enable_input_regs": false,
     "enable_output_regs": false,
     "modules": [
@@ -16,8 +16,9 @@
         {
         "id": "2_out",
         "type": "alu",
-        "in0": "in2",
-        "in1": "1_out"
+        "in0": "1_out",
+        "in1": "in2"
         }
     ]
-}
+    }
+    

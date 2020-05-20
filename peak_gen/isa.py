@@ -2,7 +2,6 @@ from .cond import Cond_t
 from .lut import LUT_t_fc
 from .alu import ALU_t, Signed_t
 from .mul import MUL_t
-from .common import DATAWIDTH
 from peak import Const, family_closure
 from hwtypes import Tuple, Product
 import magma as m
@@ -12,12 +11,11 @@ https://github.com/StanfordAHA/CGRAGenerator/wiki/PE-Spec
 def inst_arch_closure(arch):
     @family_closure
     def Inst_fc(family):
-        Data = family.BitVector[DATAWIDTH]
-        Bit = family.Bit
 
         LUT_t, _ = LUT_t_fc(family)
 
         ALU_t_list_type = Tuple[(ALU_t for _ in range(arch.num_alu))]
+        Cond_t_list_type = Tuple[(Cond_t for _ in range(arch.num_alu + arch.num_add))]
         MUL_t_list_type = Tuple[(MUL_t for _ in range(arch.num_mul))]
         mux_list_type_in0 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in0))] for i in range(len(arch.modules)) if len(arch.modules[i].in0) > 1)]
         mux_list_type_in1 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in1))] for i in range(len(arch.modules)) if len(arch.modules[i].in1) > 1)]
@@ -29,6 +27,9 @@ def inst_arch_closure(arch):
 
             if arch.num_alu > 0:
                 alu= ALU_t_list_type
+            
+            if arch.num_alu + arch.num_add > 0:
+                cond= Cond_t_list_type        # Condition code (see cond.py)
                 
             if arch.num_mul > 0:          # ALU operation
                 mul= MUL_t_list_type
@@ -47,7 +48,6 @@ def inst_arch_closure(arch):
 
             signed= Signed_t     # unsigned or signed
             lut= LUT_t          # LUT operation as a 3-bit LUT
-            cond= Cond_t        # Condition code (see cond.py)
 
         return Inst
     return Inst_fc

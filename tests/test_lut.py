@@ -34,7 +34,7 @@ def test_lut_binary(op):
         b1 = config_data_bits[1]
         b2 = config_data_bits[2]
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
-        config_data_input = config(config_data_bits)
+        config_data_input = config(config_data_bits[0], config_data_bits[1], config_data_bits[2])
         _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p==op.func(b1,b2) #Testing from bit1 and bit2 port
 
@@ -50,7 +50,7 @@ def test_lut_unary(op):
         b1 = config_data_bits[1]
         b2 = config_data_bits[2]
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
-        config_data_input = config(config_data_bits)
+        config_data_input = config(config_data_bits[0], config_data_bits[1], config_data_bits[2])
         _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p==op.func(b1)
 
@@ -68,7 +68,7 @@ def test_lut_ternary(op):
         d1 = config_data_bits[1]
 
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
-        config_data_input = config(config_data_bits)
+        config_data_input = config(config_data_bits[0], config_data_bits[1], config_data_bits[2])
 
         _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p==op.func(sel,d0,d1)
@@ -84,7 +84,7 @@ def test_lut():
         b1 = config_data_bits[1]
         b2 = config_data_bits[2]
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
-        config_data_input = config(config_data_bits)
+        config_data_input = config(config_data_bits[0], config_data_bits[1], config_data_bits[2])
         _, res_p,_ = pe(inst, inputs = DataInputList(*input_data), config_data = config_data_input)
         assert res_p== lut_val[int(BitVector[3]([b0,b1,b2]))]
 

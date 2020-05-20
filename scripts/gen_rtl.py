@@ -13,3 +13,4 @@ if not os.path.exists('scripts/build'):
 m.compile(f"scripts/build/PE", PE, output="coreir-verilog")
 
 
+graph_arch(arch)

@@ -11,7 +11,6 @@ from peak.family import AbstractFamily
 class MUL_t(Enum):
     Mult0 = 0x0
     Mult1 = 0x1
-    Mult1 = 0x2
 
 
 class Signed_t(Enum):
@@ -40,14 +39,11 @@ def MUL_fc(family : AbstractFamily):
             def __call__(self, instr: MUL_t, signed_: Signed_t, a:Data_in, b:Data_in) -> (Data_out):
 
                 if Bit(signed_ == Signed_t.signed):
-                    a_s = SData(a)
-                    b_s = SData(b)
-                    mula, mulb = UDataMul(a_s.sext(in_width)), UDataMul(b_s.sext(in_width))
+                    mula, mulb = UDataMul(SData(a).sext(in_width)), UDataMul(SData(b).sext(in_width))
                 else:
-                    a_u = UData(a)
-                    b_u = UData(b)
-                    mula, mulb = a_u.zext(in_width), b_u.zext(in_width)
-                    
+                    mula, mulb = UData(a).zext(in_width), UData(b).zext(in_width)
+
+
                 mul = mula * mulb
                 # res=0
 

@@ -1,31 +1,39 @@
 from peak_gen.sim import arch_closure
 from peak_gen.arch import read_arch
 from peak_gen.isa import inst_arch_closure
-from peak import Peak, family_closure, assemble
+from peak import Peak, family_closure
 from peak.mapper import ArchMapper
 from peak.mapper.utils import pretty_print_binding
-from hwtypes import BitVector, Tuple
+from hwtypes import BitVector, Tuple, Bit
 import sys
 import time
+from peak import family
+from peak.family import AbstractFamily
+from peak.mapper import RewriteRule
+from peak.assembler.assembled_adt import  AssembledADT
+from peak.assembler.assembler import Assembler
+import pdb
+from peak_gen.asm import asm_fc
+from peak_gen.config import config_arch_closure
+from peak_gen.enables import enables_arch_closure
 
 @family_closure
-def Add_fc(family):
+def Add_fc(family: AbstractFamily):
     Data = family.BitVector[16]
     Bit = family.Bit
-    @assemble(family, locals(), globals())
+    @family.assemble(locals(), globals())
     class Add(Peak):
-        def __call__(self, a:Data, b:Data) -> Data:
-
+        def __call__(self, a: Data, b: Data) -> Data:
+            
             return a + b
-          
     return Add
 
 def test_add():
     arch = read_arch(str(sys.argv[1]))
     PE_fc = arch_closure(arch)
     Inst_fc = inst_arch_closure(arch)
-    Inst = Inst_fc(BitVector.get_family())
-    ALU_t = Inst.alu[0]
+    Inst = Inst_fc(family.PyFamily())
+    # ALU_t = Inst.alu[0]
 
     ir_fc = Add_fc
 
@@ -38,11 +46,9 @@ def test_add():
     solution = ir_mapper.solve('cvc4')
     pretty_print_binding(solution.ibinding)
     # import pdb; pdb.set_trace()
-    assert solution.solved
+    assert solution is not None
 
     # print(hex(solution.ibinding[0][0].value))
-
-
 
     fields = []
     for k, v in Inst.field_dict.items():

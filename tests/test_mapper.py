@@ -52,7 +52,7 @@ def test_4_bit_add(arch_file):
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
     solution = ir_mapper.solve('z3')
     pretty_print_binding(solution.ibinding)
-    assert solution.solved
+    assert solution is not None
 
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")
@@ -69,7 +69,7 @@ def test_no_mapping(arch_file):
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
     solution = ir_mapper.solve('z3')
-    assert not solution.solved
+    assert solution is None
 
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")
@@ -87,7 +87,7 @@ def test_add_all_files(arch_file):
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
     solution = ir_mapper.solve('z3')
     pretty_print_binding(solution.ibinding)
-    assert solution.solved
+    assert solution is not None
 
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")
@@ -108,7 +108,27 @@ def test_alu_alu(arch_file):
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
     solution = ir_mapper.solve('z3')
     pretty_print_binding(solution.ibinding)
-    assert solution.solved
+    assert solution is not None
+
+    toc = time.perf_counter()
+    print(f"{toc - tic:0.4f} seconds")
+
+
+@pytest.mark.parametrize("arch_file", ["examples/mapper_tests/test_alu_alu.json", "examples/mapper_tests/test_mul_alu.json", "examples/mapper_tests/test_add_alu.json", "examples/mapper_tests/test_alu_alu_alu.json"])
+def test_efsmt(arch_file):
+    arch = read_arch(str(arch_file))
+    PE_fc = arch_closure(arch)
+
+    ir_fc = Add_fc
+
+    tic = time.perf_counter()
+
+    arch_mapper = ArchMapper(PE_fc)
+    ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
+    solution = ir_mapper.run_efsmt()
+    pretty_print_binding(solution.ibinding)
+
+    assert solution is not None
 
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")

@@ -1,5 +1,5 @@
-from peak import Peak, family_closure, name_outputs, gen_register
-from hwtypes import Tuple
+from peak import Peak, family_closure, name_outputs, gen_register, Const
+from hwtypes.adt import Tuple
 from functools import lru_cache
 import magma as m
 import hwtypes
@@ -16,6 +16,7 @@ from .cond import Cond_fc
 from .isa import inst_arch_closure
 from .arch import *
 from .mul import MUL_fc
+from .mux import MUX_fc
 from .config import config_arch_closure
 from .enables import enables_arch_closure
 from peak.assembler import Assembler, AssembledADT
@@ -45,6 +46,7 @@ def arch_closure(arch):
         ADD_bw = ADD_fc(family)
         LUT = LUT_fc(family)
         MUL_bw = MUL_fc(family)
+        MUX_bw = MUX_fc(family)
         Inst_fc = inst_arch_closure(arch)
         Inst = Inst_fc(family)
         Config_fc = config_arch_closure(arch)
@@ -55,7 +57,8 @@ def arch_closure(arch):
 
 
         DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
-        DataInputListDefault = DataInputList(*[Data(0) for _ in range(arch.num_inputs)])
+        # DataInputList = Tuple[Const(Data), Data]
+        # DataInputListDefault = DataInputList(*[Const(Data(0)) for _ in range(arch.num_inputs)])
         ConfigDataList = Tuple[(Data for _ in range(arch.num_const_reg))]
         RegEnList = Tuple[(Bit for _ in range(arch.num_reg))]
 
@@ -67,23 +70,12 @@ def arch_closure(arch):
 
         Config_default_list = [Data(0) for _ in range(arch.num_const_reg)]
         if (arch.num_const_reg > 0):
-            Config_default = Config(family.BitVector[3](0), ConfigDataList(*Config_default_list))
+            Config_default = Config(family.Bit(0), family.Bit(0), family.Bit(0), ConfigDataList(*Config_default_list))
         else:
-            Config_default = Config(family.BitVector[3](0))
+            Config_default = Config(family.Bit(0), family.Bit(0), family.Bit(0))
 
-   
-        if family == peak.family.MagmaFamily():
-            DataOutputList = m.Tuple[(Out_Data for _ in range(arch.num_outputs))]
-            Out_constructor = DataOutputList
-        elif family == peak.family.SMTFamily():
-            DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
-            DataOutputList_t = AssembledADT[DataOutputList, Assembler, family.BitVector]
-            Out_constructor = DataOutputList_t.from_fields
-        elif family == peak.family.PyFamily():
-            DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
-            Out_constructor = DataOutputList
-
-
+        Output_T = Tuple[(Out_Data for _ in range(arch.num_outputs))]
+        Output_Tc = family.get_constructor(Output_T)
 
         @family.assemble(locals(), globals())
         class PE(Peak, typecheck=True):
@@ -111,17 +103,21 @@ def arch_closure(arch):
                 for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
                     if inline(arch.modules[symbol_interpolate].type_ == 'alu'):
                         self.modules_symbol_interpolate: type(ALU_bw(arch.input_width)) = ALU_bw(arch.modules[symbol_interpolate].in_width)()
+                        self.cond_symbol_interpolate: Cond = Cond()
                     if inline(arch.modules[symbol_interpolate].type_ == 'mul'):
                         self.modules_symbol_interpolate: type(MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)) = MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)()
                     if inline(arch.modules[symbol_interpolate].type_ == 'add'):
                         self.modules_symbol_interpolate: type(ALU_bw(arch.input_width)) = ADD_bw(arch.input_width)()
+                        self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'mux'):
+                        self.modules_symbol_interpolate: type(MUX_bw(arch.input_width)) = MUX_bw(arch.input_width)()
                 # Bit Registers
                 self.regd: BitReg = BitReg()
                 self.rege: BitReg = BitReg()
                 self.regf: BitReg = BitReg()
 
                 #Condition code
-                self.cond: Cond = Cond()
+                # self.cond: Cond = Cond()
 
                 #Lut
                 self.lut: LUT = LUT()
@@ -131,14 +127,14 @@ def arch_closure(arch):
             @loop_unroll()
             @loop_unroll()
             @begin_rewrite()
-            # @name_outputs(PE_res=DataOutputList, res_p=UBit, read_config_data=UData32)
+            @name_outputs(PE_res=Output_T, res_p=Bit, read_config_data=Data32)
             def __call__(self, inst: Inst, \
-                inputs : DataInputList = DataInputListDefault, \
+                inputs : DataInputList, \
                 enables : Enables = RegEnListDefault, \
                 config_addr : Data8 = Data8(0), \
                 config_data : Config = Config_default, \
                 config_en : Bit = Bit(0) \
-            ) -> (DataOutputList, Bit, Data32):
+            ) -> (Output_T, Bit, Data32):
       
                 bit012_addr = (config_addr[:3] == BitVector[3](BIT012_ADDR))
 
@@ -147,26 +143,30 @@ def arch_closure(arch):
 
                 for i in ast_tools.macros.unroll(range(arch.num_const_reg)):
                     reg_we.append((config_addr == BitVector[8](i)) & config_en)
+                    # reg_we.append(Bit(1))
 
                 #rd
                 rd_we = (bit012_addr & config_en)
-                rd_config_wdata = config_data.config_data_bits[0]
+                rd_config_wdata = config_data.config_bit0
 
                 #re
                 re_we = rd_we
-                re_config_wdata = config_data.config_data_bits[1]
+                re_config_wdata = config_data.config_bit1
 
                 #rf
                 rf_we = rd_we
-                rf_config_wdata = config_data.config_data_bits[2]
+                rf_config_wdata = config_data.config_bit2
 
                 # Setting bit registers
                 rd, rd_rdata = self.regd(rd_config_wdata, rd_we, enables.clk_en)
                 re, re_rdata = self.rege(re_config_wdata, re_we, enables.clk_en)
                 rf, rf_rdata = self.regf(rf_config_wdata, rf_we, enables.clk_en)
 
+                # calculate lut results
+                lut_res = self.lut(inst.lut, rd, re, rf)
 
                 signals = {}
+                bit_signals = {}
 
                 #  Inputs with or without registers
                 if inline(arch.enable_input_regs):
@@ -180,7 +180,9 @@ def arch_closure(arch):
 
                 # Constant registers
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_const_reg)):
-                    signals[arch.const_regs[symbol_interpolate].id], _ = self.const_reg_symbol_interpolate(config_data.config_data[symbol_interpolate], reg_we[symbol_interpolate], enables.clk_en)
+                    # Need to be able to pass signal through for mapping
+                    signals[arch.const_regs[symbol_interpolate].id],_ = self.const_reg_symbol_interpolate(config_data.config_data[symbol_interpolate], reg_we[symbol_interpolate], enables.clk_en)
+                    # _, signals[arch.const_regs[symbol_interpolate].id] = self.const_reg_symbol_interpolate(config_data.config_data[symbol_interpolate], reg_we[symbol_interpolate], enables.clk_en)
 
                 #Calculate read_config_data
                 read_config_data = BV1(rd_rdata).concat(BV1(re_rdata)).concat(BV1(rf_rdata)).concat(BitVector[32-3](0))
@@ -194,7 +196,8 @@ def arch_closure(arch):
                 mux_idx_in1 = 0
                 mul_idx = 0
                 alu_idx = 0
-                alu_res_p = Bit(0)
+                cond_idx = 0
+                res_p = Bit(0)
                 Z = Bit(0)
                 N = Bit(0)
                 C = Bit(0)
@@ -229,10 +232,19 @@ def arch_closure(arch):
                         
                     elif inline(arch.modules[symbol_interpolate].type_ == "alu"):
                         signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.alu[alu_idx], inst.signed, in0, in1, rd)
+                        bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, lut_res, Z, N, C, V)
+                        res_p = bit_signals[arch.modules[symbol_interpolate].id]
+                        cond_idx = cond_idx + 1
                         alu_idx = alu_idx + 1
 
                     elif inline(arch.modules[symbol_interpolate].type_ == "add"):
                         signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
+                        bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, lut_res, Z, N, C, V)
+                        res_p = bit_signals[arch.modules[symbol_interpolate].id]
+                        cond_idx = cond_idx + 1
+
+                    elif inline(arch.modules[symbol_interpolate].type_ == "mux"):
+                        signals[arch.modules[symbol_interpolate].id] = self.modules_symbol_interpolate(in0, in1, bit_signals[arch.modules[symbol_interpolate].in2])
                             
 
                 # Register assignment
@@ -251,11 +263,6 @@ def arch_closure(arch):
                             
                     signals[arch.regs[symbol_interpolate].id] = self.regs_symbol_interpolate(in_, enables.clk_en.ite(enables.reg_enables[symbol_interpolate], Bit(0)))
 
-                # calculate lut results
-                lut_res = self.lut(inst.lut, rd, re, rf)
-
-                # calculate 1-bit result
-                res_p = self.cond(inst.cond, alu_res_p, lut_res, Z, N, C, V)
                 
                 # Output assignment
                 outputs = []
@@ -281,10 +288,10 @@ def arch_closure(arch):
                         outputs_from_reg.append(temp)
 
                     # return 16-bit result, 1-bit result
-                    return Out_constructor(*outputs_from_reg), res_p, read_config_data
+                    return Output_Tc(*outputs_from_reg), res_p, read_config_data
                     
                 else:
-                    return Out_constructor(*outputs), res_p, read_config_data
+                    return Output_Tc(*outputs), res_p, read_config_data
 
             # print(inspect.getsource(__init__)) 
             # print(inspect.getsource(__call__)) 

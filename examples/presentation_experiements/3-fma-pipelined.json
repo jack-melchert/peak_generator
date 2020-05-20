@@ -7,22 +7,34 @@
     "enable_output_regs": false,
     "modules": [
       {
+        "id": "const_0",
+        "type": "const"
+      },
+      {
+        "id": "const_1",
+        "type": "const"
+      },
+      {
+        "id": "const_2",
+        "type": "const"
+      },
+      {
         "id": "mul_out_0",
         "type": "mul",
         "in0": "in0",
-        "in1": "in1"
+        "in1": "const_0"
       },
       {
         "id": "mul_out_1",
         "type": "mul",
-        "in0": "in2",
-        "in1": "in3"
+        "in0": "in1",
+        "in1": "const_1"
       },
       {
         "id": "mul_out_2",
         "type": "mul",
-        "in0": "in4",
-        "in1": "in5"
+        "in0": "in2",
+        "in1": "const_2"
       },
       {
         "type": "reg",
@@ -43,7 +55,7 @@
         "id": "alu_out_0",
         "type": "add",
         "in0": "reg_out_0",
-        "in1": "in6"
+        "in1": "in3"
       },
       {
         "id": "alu_out_1",
