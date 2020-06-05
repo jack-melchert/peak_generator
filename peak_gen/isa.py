@@ -11,12 +11,15 @@ https://github.com/StanfordAHA/CGRAGenerator/wiki/PE-Spec
 def inst_arch_closure(arch):
     @family_closure
     def Inst_fc(family):
+        Data = family.BitVector[arch.input_width]
+        Bit = family.Bit
 
         LUT_t, _ = LUT_t_fc(family)
 
         ALU_t_list_type = Tuple[(ALU_t for _ in range(arch.num_alu))]
         Cond_t_list_type = Tuple[(Cond_t for _ in range(arch.num_alu + arch.num_add))]
         MUL_t_list_type = Tuple[(MUL_t for _ in range(arch.num_mul))]
+        Const_data_t = Tuple[(Data for _ in range(arch.num_const_inputs))]
         mux_list_type_in0 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in0))] for i in range(len(arch.modules)) if len(arch.modules[i].in0) > 1)]
         mux_list_type_in1 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in1))] for i in range(len(arch.modules)) if len(arch.modules[i].in1) > 1)]
         mux_list_type_reg = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.regs[i].in_))] for i in range(len(arch.regs)) if len(arch.regs[i].in_) > 1)]
@@ -26,13 +29,16 @@ def inst_arch_closure(arch):
         class Inst(Product):
 
             if arch.num_alu > 0:
-                alu= ALU_t_list_type
+                alu = ALU_t_list_type
             
             if arch.num_alu + arch.num_add > 0:
-                cond= Cond_t_list_type        # Condition code (see cond.py)
+                cond = Cond_t_list_type  
                 
-            if arch.num_mul > 0:          # ALU operation
-                mul= MUL_t_list_type
+            if arch.num_mul > 0:
+                mul = MUL_t_list_type
+
+            if arch.num_const_inputs > 0:
+                const_data = Const_data_t
 
             if arch.num_mux_in0 > 0:
                 mux_in0 = mux_list_type_in0
@@ -46,8 +52,13 @@ def inst_arch_closure(arch):
             if arch.num_output_mux > 0:
                 mux_out = mux_list_type_output
 
-            signed= Signed_t     # unsigned or signed
-            lut= LUT_t          # LUT operation as a 3-bit LUT
+            signed = Signed_t     # unsigned or signed
+            lut = LUT_t          # LUT operation as a 3-bit LUT
+
+            # bit0 = Bit           # RegD constant (1-bit)
+            # bit1 = Bit           # RegE constant (1-bit)
+            # bit2 = Bit           # RegF constant (1-bit)
+
 
         return Inst
     return Inst_fc

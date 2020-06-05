@@ -1,7 +1,7 @@
 import json
 
 class Arch():
-    def __init__(self, input_width, output_width, num_inputs, num_outputs, num_alu, num_mul, num_add, num_reg, num_mux, num_const_reg, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, inputs, outputs, enable_input_regs, enable_output_regs):
+    def __init__(self, input_width, output_width, num_inputs, num_outputs, num_alu, num_mul, num_add, num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, inputs, outputs, enable_input_regs, enable_output_regs):
         self.input_width = input_width
         self.output_width = output_width
         self.num_inputs = num_inputs
@@ -11,7 +11,7 @@ class Arch():
         self.num_add = num_add
         self.num_reg = num_reg
         self.num_mux = num_mux
-        self.num_const_reg = num_const_reg
+        self.num_const_inputs = num_const_inputs
         self.num_mux_in0 = num_mux_in0
         self.num_mux_in1 = num_mux_in1
         self.num_reg_mux = num_reg_mux
@@ -20,7 +20,7 @@ class Arch():
         self.outputs = outputs
         self.modules = []
         self.regs = []
-        self.const_regs = []
+        self.const_inputs = []
         self.enable_input_regs = enable_input_regs
         self.enable_output_regs = enable_output_regs
 			
@@ -40,14 +40,13 @@ class reg():
         self.in_ = in_
         self.width = width
 
-class const_reg():
+class const_input():
     def __init__(self, id, width):
         self.id = id
         self.width = width
 
 
 def read_arch(json_file_str):
-    # with open('examples/test_json.json') as json_file:
 
     with open(json_file_str) as json_file:
         json_in = json.loads(json_file.read())
@@ -56,13 +55,13 @@ def read_arch(json_file_str):
         num_mul = 0
         num_reg = 0
         num_mux = 0
-        num_const_reg = 0
+        num_const_inputs = 0
         num_mux_in0 = 0
         num_mux_in1 = 0
         num_reg_mux = 0
         modules_json = json_in['modules']
         modules = []
-        const_regs = []
+        const_inputs = []
         regs = []
         inputs = []
         ids = []
@@ -92,18 +91,18 @@ def read_arch(json_file_str):
 
                 regs.append(new_reg)
             elif module_json['type'] == "const":
-                num_const_reg += 1
-                new_const_reg = const_reg(module_json['id'], module_json.get('width', width))
+                num_const_inputs += 1
+                new_const_input = const_input(module_json['id'], module_json.get('width', width))
 
-                if new_const_reg.id in inputs:
-                    inputs.remove(new_const_reg.id)
+                if new_const_input.id in inputs:
+                    inputs.remove(new_const_input.id)
 
-                if new_const_reg.id in ids:
+                if new_const_input.id in ids:
                     raise ValueError('Two modules with the same ID')
                 else:
-                    ids.append(new_const_reg.id)
+                    ids.append(new_const_input.id)
 
-                const_regs.append(new_const_reg)
+                const_inputs.append(new_const_input)
             
             else:
                 new_module = module( module_json['id'], module_json['type'], module_json['in0'], module_json.get('in1'), module_json.get('in_width', width), module_json.get('out_width', width), module_json.get('in2'))
@@ -167,11 +166,11 @@ def read_arch(json_file_str):
             outputs.append(out_new)
 
         arch = Arch(width, json_in.get('output_width', width), num_inputs, num_outputs, num_alu, num_mul, num_add,
-                    num_reg, num_mux, num_const_reg, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, unique_inputs, outputs, 
+                    num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, unique_inputs, outputs, 
                     json_in.get('enable_input_regs', False), json_in.get('enable_output_regs', False))
         arch.modules = modules
         arch.regs = regs
-        arch.const_regs = const_regs
+        arch.const_inputs = const_inputs
         return arch
 
 
@@ -240,7 +239,7 @@ def graph_arch(arch: Arch):
             pe_subgraph.edge(str(reg.in_[0]), str(reg.id))
 
 
-    for const_idx, reg in enumerate(arch.const_regs):
+    for const_idx, reg in enumerate(arch.const_inputs):
         pe_subgraph.node(str(reg.id), "const" + str(const_idx), shape='box')
 
     graph.subgraph(pe_subgraph)

@@ -4,7 +4,7 @@ from hwtypes import SMTBit
 import magma
 
 # Current PE has 16-bit data path
-DATAWIDTH = 32
+# DATAWIDTH = 32
 # def BFloat16_fc(family):
 #     if family is magma.get_family():
 #         BFloat16 =  magma.BFloat[16]
@@ -21,14 +21,14 @@ DATAWIDTH = 32
 # Global signal modifier.
 Global = make_modifier("Global")
 
-DATA01_ADDR = 3
-BIT012_ADDR = 4
-DATA0_START = 0
-DATA0_WIDTH = DATAWIDTH
-DATA1_START = 16
-DATA1_WIDTH = DATAWIDTH
-BIT0_START = 0
-BIT1_START = 1
-BIT2_START = 2
+# DATA01_ADDR = 3
+# BIT012_ADDR = 4
+# DATA0_START = 0
+# DATA0_WIDTH = DATAWIDTH
+# DATA1_START = 16
+# DATA1_WIDTH = DATAWIDTH
+# BIT0_START = 0
+# BIT1_START = 1
+# BIT2_START = 2
 
 
