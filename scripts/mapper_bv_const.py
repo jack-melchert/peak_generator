@@ -24,9 +24,12 @@ def peak_op_bw(width):
         Bit = family.Bit
         @family.assemble(locals(), globals())
         class Peak_Op(Peak):
-            def __call__(self, a: Data, b: Data) -> Data:
+            def __call__(self, a: Data, b: Data, c: Bit) -> Data:
                 
-                return a + b
+                if c:
+                    return a
+                else:
+                    return b
             
         return Peak_Op
     return Peak_Op_fc
@@ -43,7 +46,7 @@ def test_rr():
     
     ir_fc = peak_op_bw(width)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.run_efsmt()
+    solution = ir_mapper.solve('z3', external_loop=True)
     
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")
@@ -58,58 +61,58 @@ def test_rr():
     output_binding = [((0,), ('PE_res',0))]
     rr = RewriteRule(solution.ibinding, output_binding, ir_fc, PE_fc)
 
-    counter_example = rr.verify()
+    # counter_example = rr.verify()
 
-    print(counter_example)
+    # print(counter_example)
 
-    if counter_example is None:
-        print("Passed rewrite rule verify")
+    # if counter_example is None:
+    #     print("Passed rewrite rule verify")
 
 
-    Inst_fc = inst_arch_closure(arch)
-    Inst = Inst_fc(family.PyFamily())
+    # Inst_fc = inst_arch_closure(arch)
+    # Inst = Inst_fc(family.PyFamily())
 
-    fields = []
-    for k, v in Inst.field_dict.items():
-        if issubclass(v, Tuple):
-            fields.append((k, sum(1 for _ in v)))  
-        else:
-            fields.append((k, 0))  
+    # fields = []
+    # for k, v in Inst.field_dict.items():
+    #     if issubclass(v, Tuple):
+    #         fields.append((k, sum(1 for _ in v)))  
+    #     else:
+    #         fields.append((k, 0))  
 
-    tot_length = 0
-    for field, length in fields:
-        if length > 0:
-            for ind in range(length):
-                ind_tmp = arch_mapper.input_varmap[('inst', field, ind)].size
-                tot_length += ind_tmp
-        else:
-            ind_tmp = arch_mapper.input_varmap[('inst', field)].size
-            tot_length += ind_tmp
+    # tot_length = 0
+    # for field, length in fields:
+    #     if length > 0:
+    #         for ind in range(length):
+    #             ind_tmp = arch_mapper.input_varmap[('inst', field, ind)].size
+    #             tot_length += ind_tmp
+    #     else:
+    #         ind_tmp = arch_mapper.input_varmap[('inst', field)].size
+    #         tot_length += ind_tmp
 
-    bin_inst = [int(i) for i in bin(solution.ibinding[0][0].value)[2:]]
-    z_pad = [0 for _ in range(tot_length - len(bin_inst))]
-    bin_inst = z_pad + bin_inst
-    # print(bin_inst)
-    bin_inst.reverse()
+    # bin_inst = [int(i) for i in bin(solution.ibinding[0][0].value)[2:]]
+    # z_pad = [0 for _ in range(tot_length - len(bin_inst))]
+    # bin_inst = z_pad + bin_inst
+    # # print(bin_inst)
+    # bin_inst.reverse()
     
 
-    curr_ind = 0
-    for field, length in fields:
-        if length > 0:
-            for ind in range(length):
-                ind_tmp = arch_mapper.input_varmap[('inst', field, ind)].size
-                print(field)
-                inst_tmp = bin_inst[curr_ind:curr_ind + ind_tmp]
-                inst_tmp.reverse()
-                print(inst_tmp)
-                curr_ind += ind_tmp
-        else:
-            ind_tmp = arch_mapper.input_varmap[('inst', field)].size
-            print(field)
-            inst_tmp = bin_inst[curr_ind:curr_ind + ind_tmp]
-            inst_tmp.reverse()
-            print(inst_tmp)
-            curr_ind += ind_tmp
+    # curr_ind = 0
+    # for field, length in fields:
+    #     if length > 0:
+    #         for ind in range(length):
+    #             ind_tmp = arch_mapper.input_varmap[('inst', field, ind)].size
+    #             print(field)
+    #             inst_tmp = bin_inst[curr_ind:curr_ind + ind_tmp]
+    #             inst_tmp.reverse()
+    #             print(inst_tmp)
+    #             curr_ind += ind_tmp
+    #     else:
+    #         ind_tmp = arch_mapper.input_varmap[('inst', field)].size
+    #         print(field)
+    #         inst_tmp = bin_inst[curr_ind:curr_ind + ind_tmp]
+    #         inst_tmp.reverse()
+    #         print(inst_tmp)
+    #         curr_ind += ind_tmp
 
 
 

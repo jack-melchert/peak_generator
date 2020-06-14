@@ -14,8 +14,6 @@ from peak.assembler.assembled_adt import  AssembledADT
 from peak.assembler.assembler import Assembler
 import pdb
 from peak_gen.asm import asm_fc
-from peak_gen.config import config_arch_closure
-from peak_gen.enables import enables_arch_closure
 
 @family_closure
 def Add_fc(family: AbstractFamily):
@@ -25,7 +23,7 @@ def Add_fc(family: AbstractFamily):
     class Add(Peak):
         def __call__(self, a: Data, b: Data) -> Data:
             
-            return a + b
+            return a * b
     return Add
 
 def test_add():
@@ -43,7 +41,7 @@ def test_add():
     print(inst_restrict)
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('cvc4')
+    solution = ir_mapper.run_efsmt('cvc4')
     pretty_print_binding(solution.ibinding)
     # import pdb; pdb.set_trace()
     assert solution is not None
