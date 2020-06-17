@@ -20,7 +20,7 @@ from peak.assembler import Assembler, AssembledADT
 from peak.family import AbstractFamily
 import peak 
 
-def arch_closure(arch):
+def pe_arch_closure(arch):
     @family_closure
     def PE_fc(family: AbstractFamily):
 

@@ -13,10 +13,9 @@ B0 = family.PyFamily().BitVector[8]([0,1,0,1,0,1,0,1])
 B1 = family.PyFamily().BitVector[8]([0,0,1,1,0,0,1,1])
 B2 = family.PyFamily().BitVector[8]([0,0,0,0,1,1,1,1])
 
-@family_closure
-def asm_fc(family : AbstractFamily):
-
-    def asm_arch_closure(arch):
+def asm_arch_closure(arch):
+    @family_closure
+    def asm_fc(family : AbstractFamily):
 
         Inst_fc = inst_arch_closure(arch)
         Inst = Inst_fc(family)
@@ -31,6 +30,9 @@ def asm_fc(family : AbstractFamily):
 
         if arch.num_mul > 0:
             MUL_t_list_type = Inst.mul
+
+        if arch.num_const_inputs > 0:
+            Const_data_t = Inst.const_data
         
         if arch.num_mux_in0 > 0:
             mux_list_type_in0 = Inst.mux_in0
@@ -48,6 +50,7 @@ def asm_fc(family : AbstractFamily):
         ALU_default = [ALU_t.Add for _ in range(arch.num_alu)]
         Cond_default = [Cond_t.Z for _ in range(arch.num_alu + arch.num_add)]
         MUL_default = [MUL_t.Mult0 for _ in range(arch.num_mul)]
+        Const_default = [Data(0) for _ in range(arch.num_const_inputs)]
         mux_in0_default = [family.BitVector[1](0) for _ in range(arch.num_mux_in0)]
         mux_in1_default = [family.BitVector[1](0) for _ in range(arch.num_mux_in1)]
         mux_reg_default = [family.BitVector[1](0) for _ in range(arch.num_reg_mux)]
@@ -56,9 +59,9 @@ def asm_fc(family : AbstractFamily):
 
 
 
-        def gen_inst(alu = ALU_default, mul = MUL_default, mux_in0 = mux_in0_default, \
+        def gen_inst(alu = ALU_default, cond=Cond_default, mul = MUL_default, const = Const_default, mux_in0 = mux_in0_default, \
         mux_in1 = mux_in1_default, mux_reg = mux_reg_default, mux_out = mux_out_default, \
-        signed=Signed_t.unsigned, lut=0, cond=Cond_default):
+        signed=Signed_t.unsigned, lut=0):
 
             args = []
 
@@ -70,6 +73,9 @@ def asm_fc(family : AbstractFamily):
 
             if arch.num_mul > 0:
                 args.append(MUL_t_list_type(*mul) )
+
+            if arch.num_const_inputs > 0:
+                args.append(Const_data_t(*const))
 
             if arch.num_mux_in0 > 0:
                 args.append(mux_list_type_in0(*mux_in0) )
@@ -87,11 +93,10 @@ def asm_fc(family : AbstractFamily):
             args.append(signed )
             args.append(LUT_t(lut) )
 
-
             return Inst(*args)
 
         return gen_inst
-    return asm_arch_closure
+    return asm_fc
 
 def lut(arch, val):
     Cond_default = [Cond_t.LUT for _ in range(arch.num_alu + arch.num_add)]
