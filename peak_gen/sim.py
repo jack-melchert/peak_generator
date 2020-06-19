@@ -27,12 +27,11 @@ def pe_arch_closure(arch):
         BitVector = family.BitVector
         Data = family.BitVector[arch.input_width]
         Out_Data = family.BitVector[arch.output_width]
-        UBit = family.Unsigned[1]
-        Data8 = family.BitVector[8]
-        Data32 = family.BitVector[32]
-        UData32 = family.Unsigned[32]
+
         Bit = family.Bit
         Register = gen_register(Data, 0)(family)
+        Bit_Register = gen_register(Bit, 0)(family)
+
         ALU_bw = ALU_fc(family)
         ADD_bw = ADD_fc(family)
         LUT = LUT_fc(family)
@@ -42,14 +41,16 @@ def pe_arch_closure(arch):
         Inst = Inst_fc(family)
         Cond = Cond_fc(family)
 
-
         DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
-        BitInputList = Tuple[(Bit for _ in range(arch.num_alu + 3))]
+        BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs + 3))]
 
-        BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_alu + 3)])
+        BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs + 3)])
 
-        Output_T = Tuple[(Out_Data for _ in range(arch.num_outputs))]
+        Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
         Output_Tc = family.get_constructor(Output_T)
+
+        # Bit_Output_T = Tuple[(Bit for _ in range(arch.num_bit_outputs))]
+        # Bit_Output_Tc = family.get_constructor(Bit_Output_T)
 
         @family.assemble(locals(), globals())
         class PE(Peak, typecheck=True):
@@ -63,10 +64,14 @@ def pe_arch_closure(arch):
                 if inline(arch.enable_input_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_inputs)):
                         self.input_reg_symbol_interpolate: Register = Register()
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
+                        self.bit_input_reg_symbol_interpolate: Bit_Register = Bit_Register()
 
                 if inline(arch.enable_output_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_outputs)):
                         self.output_reg_symbol_interpolate: Register = Register()
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_outputs)):
+                        self.bit_output_reg_symbol_interpolate: Bit_Register = Bit_Register()
 
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_reg)):
                     self.regs_symbol_interpolate: Register = Register()
@@ -91,12 +96,12 @@ def pe_arch_closure(arch):
             @loop_unroll()
             @loop_unroll()
             @begin_rewrite()
-            @name_outputs(PE_res=Output_T, res_p=Bit)
+            @name_outputs(pe_outputs=Output_T)
             def __call__(self, inst: Const(Inst), \
                 inputs: DataInputList, \
                 bit_inputs: BitInputList = BitInputListDefault, \
                 clk_en: Global(Bit) = Bit(1)
-            ) -> (Output_T, Bit):
+            ) -> (Output_T):
 
 
                 # calculate lut results
@@ -109,10 +114,14 @@ def pe_arch_closure(arch):
                 if inline(arch.enable_input_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_inputs)):
                         signals[arch.inputs[symbol_interpolate]] = self.input_reg_symbol_interpolate(inputs[symbol_interpolate], clk_en)
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
+                        signals[arch.bit_inputs[symbol_interpolate]] = self.bit_input_reg_symbol_interpolate(bit_inputs[symbol_interpolate + 3], clk_en)
                         
                 else:
                     for i in ast_tools.macros.unroll(range(arch.num_inputs)):
                         signals[arch.inputs[i]] = inputs[i]
+                    for i in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
+                        signals[arch.bit_inputs[i]] = bit_inputs[i + 3]
                         
                 # Constant inputs
                 for i in ast_tools.macros.unroll(range(arch.num_const_inputs)):
@@ -162,20 +171,20 @@ def pe_arch_closure(arch):
                         mul_idx = mul_idx + 1
                         
                     elif inline(arch.modules[symbol_interpolate].type_ == "alu"):
-                        signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.alu[alu_idx], inst.signed, in0, in1, bit_inputs[alu_idx + 3])
+                        signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.alu[alu_idx], inst.signed, in0, in1)
                         bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, lut_res, Z, N, C, V)
-                        res_p = bit_signals[arch.modules[symbol_interpolate].id]
+                        # res_p = bit_signals[arch.modules[symbol_interpolate].id]
                         cond_idx = cond_idx + 1
                         alu_idx = alu_idx + 1
 
                     elif inline(arch.modules[symbol_interpolate].type_ == "add"):
                         signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
                         bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, lut_res, Z, N, C, V)
-                        res_p = bit_signals[arch.modules[symbol_interpolate].id]
+                        # res_p = bit_signals[arch.modules[symbol_interpolate].id]
                         cond_idx = cond_idx + 1
 
                     elif inline(arch.modules[symbol_interpolate].type_ == "mux"):
-                        signals[arch.modules[symbol_interpolate].id] = self.modules_symbol_interpolate(in0, in1, bit_signals[arch.modules[symbol_interpolate].in2])
+                        signals[arch.modules[symbol_interpolate].id] = self.modules_symbol_interpolate(in0, in1, bit_signals[arch.modules[symbol_interpolate].sel])
                             
 
                 # Register assignment
@@ -197,6 +206,7 @@ def pe_arch_closure(arch):
                 
                 # Output assignment
                 outputs = []
+                bit_outputs = []
                 mux_idx_out = 0
                 for out_index in ast_tools.macros.unroll(range(arch.num_outputs)):
                     if inline(len(arch.outputs[out_index]) == 1):
@@ -210,19 +220,25 @@ def pe_arch_closure(arch):
                                 output_temp = signals[arch.outputs[out_index][mux_inputs]]
                         outputs.append(output_temp)
 
+                for out_index in ast_tools.macros.unroll(range(arch.num_bit_outputs)):
+                    bit_outputs.append(bit_signals[arch.bit_outputs[out_index]])
 
 
                 if inline(arch.enable_output_regs):
                     outputs_from_reg = []
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_outputs)):
-                        temp = self.output_reg_symbol_interpolate(outputs[symbol_interpolate], clk_en)
+                        temp = self.output_reg_symbol_interpolate(outputs[symbol_interpolate], clk_en) 
+                        outputs_from_reg.append(temp)
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_outputs)):
+                        temp = self.bit_output_reg_symbol_interpolate(bit_outputs[symbol_interpolate], clk_en)
                         outputs_from_reg.append(temp)
 
                     # return 16-bit result, 1-bit result
-                    return Output_Tc(*outputs_from_reg), res_p
+                    return Output_Tc(*outputs_from_reg)
                     
                 else:
-                    return Output_Tc(*outputs), res_p
+                    outputs = outputs + bit_outputs
+                    return Output_Tc(*outputs)
 
             # print(inspect.getsource(__init__)) 
             # print(inspect.getsource(__call__)) 

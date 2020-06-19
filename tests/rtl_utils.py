@@ -3,7 +3,7 @@ import magma
 import shutil
 from peak.assembler import Assembler
 from peak import wrap_with_disassembler
-from peak_gen import arch_closure, inst_arch_closure
+from peak_gen import pe_arch_closure, inst_arch_closure
 from peak_gen.arch import read_arch
 from peak_gen.asm import asm_arch_closure
 from peak_gen.alu import ALU_t_fc
@@ -23,7 +23,7 @@ width = arch.input_width
 Inst_fc = inst_arch_closure(arch)
 Inst = Inst_fc(Bit.get_family())
 
-PE_fc = arch_closure(arch)
+PE_fc = pe_arch_closure(arch)
 PE_bv = PE_fc(Bit.get_family())
 
 Data = BitVector[width]

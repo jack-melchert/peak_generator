@@ -100,7 +100,7 @@ def asm_arch_closure(arch):
 
 def lut(arch, val):
     Cond_default = [Cond_t.LUT for _ in range(arch.num_alu + arch.num_add)]
-    return asm_fc(family.PyFamily())(arch)(lut=val, cond=Cond_default)
+    return asm_arch_closure(arch)(family.PyFamily())(lut=val, cond=Cond_default)
 
 #Using bit1 and bit2 since bit0 can be used in the ALU
 def lut_and(arch):

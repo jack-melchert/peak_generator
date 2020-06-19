@@ -3,6 +3,9 @@
   "outputs": [
     60
   ],
+  "bit_outputs": [
+      
+  ],
   "enable_input_regs": false,
   "enable_output_regs": false,
   "modules": [

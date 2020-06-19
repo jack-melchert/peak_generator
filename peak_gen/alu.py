@@ -8,17 +8,15 @@ from peak.family import AbstractFamily
 class ALU_t(Enum):
     Add = 0
     Sub = 1
-    Adc = 2
-    Sbc = 6
-    Abs = 3
-    GTE_Max = 4
-    LTE_Min = 5
-    Sel = 8
-    SHR = 0xf
-    SHL = 0x11
-    Or = 0x12
-    And = 0x13
-    XOr = 0x14
+    Abs = 2
+    GTE_Max = 3
+    LTE_Min = 4
+    # Sel = 8
+    SHR = 0x5
+    SHL = 0x6
+    Or = 0x7
+    And = 0x8
+    XOr = 0x9
 
 class Signed_t(Enum):
     unsigned = 0
@@ -44,7 +42,7 @@ def ALU_fc(family : AbstractFamily):
         @family.assemble(locals(), globals())
         class ALU(Peak):
             @name_outputs(res=Data, res_p=Bit, Z=Bit, N=Bit, C=Bit, V=Bit)
-            def __call__(self, alu: ALU_t, signed_: Signed_t, a: Data, b: Data, d:Bit) -> (Data, Bit, Bit, Bit, Bit, Bit):
+            def __call__(self, alu: ALU_t, signed_: Signed_t, a: Data, b: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):
                 
 
                 if signed_ == Signed_t.signed:
@@ -67,19 +65,17 @@ def ALU_fc(family : AbstractFamily):
                 res_p = Bit(0)
 
                 Cin = Bit(0)
-                if (alu == ALU_t.Sub) | (alu == ALU_t.Sbc):
+                if (alu == ALU_t.Sub):
                     b = ~b
 
                 if (alu == ALU_t.Add):
                     Cin = Bit(0)  
                 elif (alu == ALU_t.Sub):
                     Cin = Bit(1)
-                elif (alu == ALU_t.Adc) | (alu == ALU_t.Sbc):
-                    Cin = d
 
                 C = Bit(0)
                 V = Bit(0)
-                if (alu == ALU_t.Add) | (alu == ALU_t.Sub) | (alu == ALU_t.Adc) | (alu == ALU_t.Sbc):
+                if (alu == ALU_t.Add) | (alu == ALU_t.Sub):
                     #adc needs to be unsigned
                     res, C = UData(a).adc(UData(b), Cin)
                     V = overflow(a, b, res)
@@ -93,8 +89,8 @@ def ALU_fc(family : AbstractFamily):
                     res, res_p = lte_pred.ite(a, b), lte_pred
                 elif alu == ALU_t.Abs:
                     res, res_p = abs_pred.ite(a, -SInt[width](a)), Bit(a[-1])
-                elif alu == ALU_t.Sel:
-                    res, res_p = d.ite(a, b), Bit(0)
+                # elif alu == ALU_t.Sel:
+                #     res, res_p = d.ite(a, b), Bit(0)
                 elif alu == ALU_t.And:
                     res, res_p = a & b, Bit(0)
                 elif alu == ALU_t.Or:

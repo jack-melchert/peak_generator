@@ -2,6 +2,9 @@
     "outputs": [
       "reg_out"
     ],
+    "bit_outputs": [
+      
+    ],
     "width": 32,
     "enable_input_regs": false,
     "enable_output_regs": false,

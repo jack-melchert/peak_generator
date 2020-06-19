@@ -1,4 +1,4 @@
-from peak_gen.sim import arch_closure
+from peak_gen.sim import pe_arch_closure
 from peak_gen.arch import read_arch
 import sys
 from peak import Peak, family_closure
@@ -42,7 +42,7 @@ def Mul_Add_fc(family : AbstractFamily):
 @pytest.mark.parametrize("arch_file", ["examples/mapper_tests/test_alu4_alu4.json"])
 def test_4_bit_add(arch_file):
     arch = read_arch(str(arch_file))
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
 
     ir_fc = Add4_fc
 
@@ -60,7 +60,7 @@ def test_4_bit_add(arch_file):
 @pytest.mark.parametrize("arch_file", ["examples/misc_tests/test_add.json"])
 def test_no_mapping(arch_file):
     arch = read_arch(str(arch_file))
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
 
     ir_fc = Mul_Add_fc
 
@@ -77,7 +77,7 @@ def test_no_mapping(arch_file):
 @pytest.mark.parametrize("arch_file", ["examples/misc_tests/test_add.json", "examples/misc_tests/test_alu.json", "examples/mapper_tests/test_mul_add.json"])
 def test_add_all_files(arch_file):
     arch = read_arch(str(arch_file))
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
 
     ir_fc = Add_fc
 
@@ -98,7 +98,7 @@ def test_add_all_files(arch_file):
 @pytest.mark.parametrize("arch_file", ["examples/mapper_tests/test_alu_alu.json", "examples/mapper_tests/test_mul_alu.json", "examples/mapper_tests/test_add_alu.json"])
 def test_alu_alu(arch_file):
     arch = read_arch(str(arch_file))
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
 
     ir_fc = Add_fc
 
@@ -117,7 +117,7 @@ def test_alu_alu(arch_file):
 @pytest.mark.parametrize("arch_file", ["examples/mapper_tests/test_alu_alu.json", "examples/mapper_tests/test_mul_alu.json", "examples/mapper_tests/test_add_alu.json", "examples/mapper_tests/test_alu_alu_alu.json"])
 def test_efsmt(arch_file):
     arch = read_arch(str(arch_file))
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
 
     ir_fc = Add_fc
 
@@ -125,7 +125,7 @@ def test_efsmt(arch_file):
 
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.run_efsmt()
+    solution = ir_mapper.solve(external_loop=True)
     pretty_print_binding(solution.ibinding)
 
     assert solution is not None

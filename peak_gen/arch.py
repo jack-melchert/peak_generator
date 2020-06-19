@@ -1,11 +1,13 @@
 import json
 
 class Arch():
-    def __init__(self, input_width, output_width, num_inputs, num_outputs, num_alu, num_mul, num_add, num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, inputs, outputs, enable_input_regs, enable_output_regs):
+    def __init__(self, input_width, output_width, num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_mul, num_add, num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, inputs, bit_inputs, outputs, bit_outputs, enable_input_regs, enable_output_regs):
         self.input_width = input_width
         self.output_width = output_width
         self.num_inputs = num_inputs
+        self.num_bit_inputs = num_bit_inputs
         self.num_outputs = num_outputs
+        self.num_bit_outputs = num_bit_outputs
         self.num_alu = num_alu
         self.num_mul = num_mul
         self.num_add = num_add
@@ -17,7 +19,9 @@ class Arch():
         self.num_reg_mux = num_reg_mux
         self.num_output_mux = num_output_mux
         self.inputs = inputs
+        self.bit_inputs = bit_inputs
         self.outputs = outputs
+        self.bit_outputs = bit_outputs
         self.modules = []
         self.regs = []
         self.const_inputs = []
@@ -25,12 +29,12 @@ class Arch():
         self.enable_output_regs = enable_output_regs
 			
 class module():
-    def __init__(self, id, type_, in0, in1, in_width, out_width, in2):
+    def __init__(self, id, type_, in0, in1, in_width, out_width, sel=""):
         self.id = id
         self.type_ = type_
         self.in0 = in0
         self.in1 = in1
-        self.in2 = in2
+        self.sel = sel
         self.in_width = in_width
         self.out_width = out_width
 
@@ -64,6 +68,7 @@ def read_arch(json_file_str):
         const_inputs = []
         regs = []
         inputs = []
+        bit_inputs = []
         ids = []
         width = json_in.get('input_width', 16)
 
@@ -105,7 +110,7 @@ def read_arch(json_file_str):
                 const_inputs.append(new_const_input)
             
             else:
-                new_module = module( module_json['id'], module_json['type'], module_json['in0'], module_json.get('in1'), module_json.get('in_width', width), module_json.get('out_width', width), module_json.get('in2'))
+                new_module = module( module_json['id'], module_json['type'], module_json['in0'], module_json.get('in1'), module_json.get('in_width', width), module_json.get('out_width', width), module_json.get('sel'))
                 
                 if new_module.type_ == "alu":
                     num_alu += 1
@@ -134,6 +139,9 @@ def read_arch(json_file_str):
                 if len(new_module.in1) > 1:
                     num_mux_in1 += 1
 
+                if new_module.sel:
+                    bit_inputs.append(new_module.sel)
+
                 if new_module.id in ids:
                     raise ValueError('Two modules with the same ID')
                 else:
@@ -142,11 +150,14 @@ def read_arch(json_file_str):
                 modules.append(new_module)
 
         unique_inputs = sorted([entry for entry in inputs if entry not in ids])
+        unique_bit_inputs = sorted([entry for entry in bit_inputs if entry not in ids])
         num_inputs = len(unique_inputs)
+        num_bit_inputs = len(unique_bit_inputs)
         num_outputs = len(json_in['outputs'])
+        num_bit_outputs = len(json_in['bit_outputs'])
 
         print(unique_inputs)
-
+        print(unique_bit_inputs)
         for module_ in modules:
             if not isinstance(module_.in0, list):
                 module_.in0 = [module_.in0]
@@ -165,8 +176,12 @@ def read_arch(json_file_str):
 
             outputs.append(out_new)
 
-        arch = Arch(width, json_in.get('output_width', width), num_inputs, num_outputs, num_alu, num_mul, num_add,
-                    num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, unique_inputs, outputs, 
+        bit_outputs = []
+        for bit_out in json_in['bit_outputs']:
+            bit_outputs.append(bit_out)
+
+        arch = Arch(width, json_in.get('output_width', width), num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_mul, num_add,
+                    num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, unique_inputs, unique_bit_inputs, outputs, bit_outputs, 
                     json_in.get('enable_input_regs', False), json_in.get('enable_output_regs', False))
         arch.modules = modules
         arch.regs = regs
@@ -185,6 +200,9 @@ def graph_arch(arch: Arch):
     
     for input in arch.inputs:
         inputs_subgraph.node(str(input), str(input), shape='circle')
+
+    for bit_input in arch.bit_inputs:
+        inputs_subgraph.node(str(bit_input), str(bit_input), shape='circle')
 
     graph.subgraph(inputs_subgraph)
 
@@ -259,6 +277,11 @@ def graph_arch(arch: Arch):
             mux_out_idx += 1
         else:
             graph.edge(str(output[0]), "out_" + str(i))
+
+    for i, output in enumerate(arch.bit_outputs):
+        
+        outputs_subgraph.node("bit_out_" + str(i), "bit_out" + str(i), shape='circle')
+        graph.edge(str(output), "bit_out_" + str(i))
 
 
     graph.subgraph(outputs_subgraph)

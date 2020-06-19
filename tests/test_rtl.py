@@ -1,7 +1,7 @@
 from peak_gen.alu import ALU_fc
 from peak_gen.cond import Cond_fc
 from peak_gen.lut import LUT_fc
-from peak_gen.sim import arch_closure
+from peak_gen.sim import pe_arch_closure
 from peak_gen.arch import read_arch
 from hwtypes import BitVector
 import magma, pytest, glob
@@ -16,7 +16,7 @@ def test_alu():
 @pytest.mark.parametrize("arch_file", glob.glob('examples/**/*.json', recursive=True))
 def test_PE(arch_file):
     arch = read_arch(str(arch_file))
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
     PE_magma = PE_fc(family.MagmaFamily())
 
 def test_LUT():

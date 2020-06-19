@@ -3,9 +3,9 @@ import magma
 import shutil
 from peak.assembler import Assembler
 from peak import wrap_with_disassembler
-from peak_gen import arch_closure, inst_arch_closure
+from peak_gen import pe_arch_closure, inst_arch_closure
 from peak_gen.arch import read_arch
-from peak_gen.asm import asm_fc
+from peak_gen.asm import asm_arch_closure
 from peak_gen.alu import ALU_t, Signed_t
 from peak_gen.mul import MUL_t
 from hwtypes import Bit, BitVector
@@ -33,11 +33,11 @@ def test_pe_gen(arch_file):
     num_alu = arch.num_alu
     Inst_fc = inst_arch_closure(arch)
     Inst = Inst_fc(family.PyFamily())
-    asm_arch_closure = asm_fc(family.PyFamily())
-    gen_inst = asm_arch_closure(arch)
+    asm_fc = asm_arch_closure(arch)
+    gen_inst = asm_fc(family.PyFamily())
 
 
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
     PE_bv = PE_fc(family.PyFamily())
 
 
@@ -68,7 +68,9 @@ def test_pe_gen(arch_file):
     # Define instruction here
     num_sim_cycles = 1
     alu_list = [ALU_t.Add for _ in range(arch.num_alu)]
+    cond_list = [Cond_t.Z for _ in range(arch.num_alu + arch.num_add)]
     mul_list = [MUL_t.Mult0 for _ in range(arch.num_mul)]
+    const_list = [Data(0) for _ in range(arch.num_const_inputs)]
     mux_list_in0 = [0 for _ in range(arch.num_mux_in0)]
     mux_list_in1 = [0 for _ in range(arch.num_mux_in1)]
     mux_list_reg = [0 for _ in range(arch.num_reg_mux)]
@@ -113,7 +115,7 @@ def test_pe_gen(arch_file):
             mux_out_idx += 1
 
 
-    inst_gen = gen_inst(alu_list, mul_list, mux_list_inst_in0, mux_list_inst_in1, mux_list_inst_reg, mux_list_inst_out, Signed_t.unsigned, 0)
+    inst_gen = gen_inst(alu = alu_list, cond = cond_list, mul = mul_list, const = const_list, mux_in0 = mux_list_inst_in0, mux_in1 = mux_list_inst_in1, mux_reg = mux_list_inst_reg, mux_out = mux_list_inst_out, signed = Signed_t.unsigned, lut = 0)
 
     inputs = [random.randint(0, 2**(width-2)) for _ in range(num_inputs)]
 
@@ -196,13 +198,13 @@ def test_pe_gen(arch_file):
 
         pe = PE_bv()
         for _ in range(num_sim_cycles):
-            res_pe,_ = pe(inst_gen, inputs_to_PE)
+            res_pe = pe(inst_gen, inputs_to_PE)
 
         # Need to advance clock cycles if regs are enabled
         if (arch.enable_input_regs):
-            res_pe,_ = pe(inst_gen, inputs_to_PE)
+            res_pe = pe(inst_gen, inputs_to_PE)
         if (arch.enable_output_regs):
-            res_pe,_ = pe(inst_gen, inputs_to_PE)
+            res_pe = pe(inst_gen, inputs_to_PE)
 
         # import pdb; pdb.set_trace()
         print("functional test result: ", [res_pe[i].value for i in range(num_outputs)])

@@ -1,4 +1,4 @@
-from peak_gen.sim import arch_closure
+from peak_gen.sim import pe_arch_closure
 from peak_gen.arch import read_arch
 from peak_gen.isa import inst_arch_closure
 from peak import Peak, family_closure
@@ -13,7 +13,6 @@ from peak.mapper import RewriteRule
 from peak.assembler.assembled_adt import  AssembledADT
 from peak.assembler.assembler import Assembler
 import pdb
-from peak_gen.asm import asm_fc
 
 @family_closure
 def Add_fc(family: AbstractFamily):
@@ -21,14 +20,14 @@ def Add_fc(family: AbstractFamily):
     Bit = family.Bit
     @family.assemble(locals(), globals())
     class Add(Peak):
-        def __call__(self, a: Data, b: Data) -> Data:
+        def __call__(self, a: Data, b: Data, c:Data) -> Data:
             
-            return a * b
+            return a + b + c
     return Add
 
 def test_add():
     arch = read_arch(str(sys.argv[1]))
-    PE_fc = arch_closure(arch)
+    PE_fc = pe_arch_closure(arch)
     Inst_fc = inst_arch_closure(arch)
     Inst = Inst_fc(family.PyFamily())
     # ALU_t = Inst.alu[0]
@@ -41,7 +40,7 @@ def test_add():
     print(inst_restrict)
     arch_mapper = ArchMapper(PE_fc)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.run_efsmt('cvc4')
+    solution = ir_mapper.solve('z3', external_loop=True)
     pretty_print_binding(solution.ibinding)
     # import pdb; pdb.set_trace()
     assert solution is not None

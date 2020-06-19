@@ -2,6 +2,9 @@
     "outputs": [
         "5_out"
     ],
+    "bit_outputs": [
+        "5_out"
+      ],
     "input_width": 16,
     "output_width": 16,
     "enable_input_regs": false,
