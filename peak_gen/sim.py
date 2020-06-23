@@ -1,5 +1,5 @@
 from peak import Peak, family_closure, name_outputs, gen_register, Const
-from hwtypes.adt import Tuple
+from hwtypes.adt import Tuple, Product
 from functools import lru_cache
 import magma as m
 import hwtypes
@@ -9,7 +9,7 @@ from ast_tools.macros import inline
 import inspect
 from .common import *
 from .lut import LUT_fc
-from .alu import ALU_fc
+from .alu import ALU_fc, fp_unit_fc
 from .alu_no_fp import ALU_no_fp_fc
 from .add import ADD_fc
 from .cond import Cond_fc
@@ -34,6 +34,7 @@ def pe_arch_closure(arch):
         Bit_Register = gen_register(Bit, 0)(family)
 
         ALU_bw = ALU_fc(family)
+        fp_unit_bw = fp_unit_fc(family)
         ALU_no_fp_bw = ALU_no_fp_fc(family)
         ADD_bw = ADD_fc(family)
         LUT = LUT_fc(family)
@@ -50,6 +51,14 @@ def pe_arch_closure(arch):
 
         Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
         Output_Tc = family.get_constructor(Output_T)
+
+        class fp_val(Product):
+            res = Data
+            res_p = Bit
+            Z = Bit
+            N = Bit
+            C = Bit
+            V = Bit  
 
         # Bit_Output_T = Tuple[(Bit for _ in range(arch.num_bit_outputs))]
         # Bit_Output_Tc = family.get_constructor(Bit_Output_T)
@@ -245,7 +254,87 @@ def pe_arch_closure(arch):
                     outputs = outputs + bit_outputs
                     return Output_Tc(*outputs)
 
+
+      
+                
+            num_fp = 0
+            for m in ast_tools.macros.unroll(range(len(arch.modules))):
+                if arch.modules[m].type_ == 'alu':
+                    if arch.modules[m].in_width == 16:
+                        num_fp += 1
+
+            fp_vals = Tuple[(fp_val for _ in range(num_fp))]
+
             # print(inspect.getsource(__init__)) 
             # print(inspect.getsource(__call__)) 
+            @end_rewrite()
+            @if_inline()
+            @loop_unroll()
+            @begin_rewrite()
+            def _set_fp(self, fp_vals : fp_vals):
+                i = 0
+                for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
+                    if inline(arch.modules[symbol_interpolate].type_ == 'alu'):
+                        if inline(arch.modules[symbol_interpolate].in_width == 16):
+                            module = self.modules_symbol_interpolate
+                            module.fp_unit._set_fp(fp_vals[i].res, fp_vals[i].res_p, fp_vals[i].Z, fp_vals[i].N, fp_vals[i].C, fp_vals[i].V)
+                            i += 1
+                         
+
         return PE
     return PE_fc
+
+
+def wrapped_pe_arch_closure(arch):
+    
+    @family_closure
+    def Wrapped_PE_fc(family: AbstractFamily):
+        BitVector = family.BitVector
+        Data = family.BitVector[arch.input_width]
+        Out_Data = family.BitVector[arch.output_width]
+        Bit = family.Bit
+
+        DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
+        BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs + 3))]
+
+        BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs + 3)])
+
+        Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
+        Output_Tc = family.get_constructor(Output_T)
+
+        Inst_fc = inst_arch_closure(arch)
+        Inst = Inst_fc(family)
+
+        class fp_val(Product):
+            res = Data
+            res_p = Bit
+            Z = Bit
+            N = Bit
+            C = Bit
+            V = Bit        
+
+        PE = pe_arch_closure(arch)(family)
+
+        num_fp = 0
+        for m in ast_tools.macros.unroll(range(len(arch.modules))):
+            if arch.modules[m].type_ == 'alu':
+                if arch.modules[m].in_width == 16:
+                    num_fp += 1
+
+        fp_vals = Tuple[(fp_val for _ in range(num_fp))]
+        
+        @family.assemble(locals(), globals())
+        class Wrapped_PE(Peak):
+            def __init__(self):
+                self.pe : PE = PE()
+
+            def __call__(self, fp_vals : fp_vals, inst : Const(Inst), inputs: DataInputList, \
+                    bit_inputs: BitInputList = BitInputListDefault, \
+                    clk_en: Global(Bit) = Bit(1)) -> Output_T:
+
+
+                self.pe._set_fp(fp_vals)
+                return self.pe(inst, inputs, bit_inputs, clk_en)
+
+        return Wrapped_PE
+    return Wrapped_PE_fc
