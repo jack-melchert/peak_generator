@@ -10,6 +10,7 @@ import inspect
 from .common import *
 from .lut import LUT_fc
 from .alu import ALU_fc
+from .alu_no_fp import ALU_no_fp_fc
 from .add import ADD_fc
 from .cond import Cond_fc
 from .isa import inst_arch_closure
@@ -33,6 +34,7 @@ def pe_arch_closure(arch):
         Bit_Register = gen_register(Bit, 0)(family)
 
         ALU_bw = ALU_fc(family)
+        ALU_no_fp_bw = ALU_no_fp_fc(family)
         ADD_bw = ADD_fc(family)
         LUT = LUT_fc(family)
         MUL_bw = MUL_fc(family)
@@ -78,7 +80,10 @@ def pe_arch_closure(arch):
 
                 for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
                     if inline(arch.modules[symbol_interpolate].type_ == 'alu'):
-                        self.modules_symbol_interpolate: type(ALU_bw(arch.input_width)) = ALU_bw(arch.modules[symbol_interpolate].in_width)()
+                        if inline(arch.modules[symbol_interpolate].in_width == 16):
+                            self.modules_symbol_interpolate: type(ALU_bw(arch.modules[symbol_interpolate].in_width)) = ALU_bw(arch.modules[symbol_interpolate].in_width)()
+                        else:
+                            self.modules_symbol_interpolate: type(ALU_no_fp_bw(arch.modules[symbol_interpolate].in_width)) = ALU_no_fp_bw(arch.modules[symbol_interpolate].in_width)()
                         self.cond_symbol_interpolate: Cond = Cond()
                     if inline(arch.modules[symbol_interpolate].type_ == 'mul'):
                         self.modules_symbol_interpolate: type(MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)) = MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)()

@@ -24,8 +24,8 @@ def peak_op_bw(width):
         Bit = family.Bit
         @family.assemble(locals(), globals())
         class Peak_Op(Peak):
-            def __call__(self, a:Data) -> Data:
-                return a
+            def __call__(self, a:Data, b:Data) -> Data:
+                return a + b
             
         return Peak_Op
     return Peak_Op_fc
