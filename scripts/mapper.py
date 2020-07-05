@@ -1,7 +1,7 @@
-from peak_gen.sim import pe_arch_closure
+from peak_gen.sim import wrapped_pe_arch_closure
 from peak_gen.arch import read_arch
 from peak_gen.isa import inst_arch_closure
-from peak import Peak, family_closure
+from peak import Peak, family_closure, Const
 from peak.mapper import ArchMapper
 from peak.mapper.utils import pretty_print_binding
 from hwtypes import BitVector, Tuple, Bit
@@ -13,84 +13,60 @@ from peak.mapper import RewriteRule
 from peak.assembler.assembled_adt import  AssembledADT
 from peak.assembler.assembler import Assembler
 import pdb
+import json
+import copy 
 
-@family_closure
-def Add_fc(family: AbstractFamily):
-    Data = family.BitVector[16]
-    Bit = family.Bit
-    @family.assemble(locals(), globals())
-    class Add(Peak):
-        def __call__(self, a: Data, b: Data, c:Data) -> Data:
+
+def peak_op_bw(width):
+    @family_closure
+    def Peak_Op_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
+        Bit = family.Bit
+        @family.assemble(locals(), globals())
+        class Peak_Op(Peak):
+
+   
+            def __call__(self, in0:Data, in1:Data) -> Data:
+
+                # a_s = SData(a)
+                # b_s = SData(b)
+                c = in1 - in0
+                return (-c if c < 0 else c)
             
-            return a + b + c
-    return Add
+        return Peak_Op
+    return Peak_Op_fc
 
-def test_add():
+def test_rr():
     arch = read_arch(str(sys.argv[1]))
-    PE_fc = pe_arch_closure(arch)
-    Inst_fc = inst_arch_closure(arch)
-    Inst = Inst_fc(family.PyFamily())
-    # ALU_t = Inst.alu[0]
+    PE_fc = wrapped_pe_arch_closure(arch)
 
-    ir_fc = Add_fc
+    width = 16
+
+    arch_mapper = ArchMapper(PE_fc)
 
     tic = time.perf_counter()
-
-    inst_restrict = int('10000000000', 2)
-    print(inst_restrict)
-    arch_mapper = ArchMapper(PE_fc)
+    
+    ir_fc = peak_op_bw(width)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
     solution = ir_mapper.solve('z3', external_loop=True)
-    pretty_print_binding(solution.ibinding)
-    # import pdb; pdb.set_trace()
-    assert solution is not None
-
-    # print(hex(solution.ibinding[0][0].value))
-
-    fields = []
-    for k, v in Inst.field_dict.items():
-        if issubclass(v, Tuple):
-            fields.append((k, sum(1 for _ in v)))  
-        else:
-            fields.append((k, 0))  
-
-    tot_length = 0
-    for field, length in fields:
-        if length > 0:
-            for ind in range(length):
-                ind_tmp = arch_mapper.input_varmap[('inst', field, ind)].size
-                tot_length += ind_tmp
-        else:
-            ind_tmp = arch_mapper.input_varmap[('inst', field)].size
-            tot_length += ind_tmp
-
-    bin_inst = [int(i) for i in bin(solution.ibinding[0][0].value)[2:]]
-    z_pad = [0 for _ in range(tot_length - len(bin_inst))]
-    bin_inst = z_pad + bin_inst
-    # print(bin_inst)
-    bin_inst.reverse()
     
-
-    curr_ind = 0
-    for field, length in fields:
-        if length > 0:
-            for ind in range(length):
-                ind_tmp = arch_mapper.input_varmap[('inst', field, ind)].size
-                print(field)
-                inst_tmp = bin_inst[curr_ind:curr_ind + ind_tmp]
-                inst_tmp.reverse()
-                print(inst_tmp)
-                curr_ind += ind_tmp
-        else:
-            ind_tmp = arch_mapper.input_varmap[('inst', field)].size
-            print(field)
-            inst_tmp = bin_inst[curr_ind:curr_ind + ind_tmp]
-            inst_tmp.reverse()
-            print(inst_tmp)
-            curr_ind += ind_tmp
-
-
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")
 
-test_add()
+    if solution is None: 
+        print("No solution found for width = ", width)
+    else:
+        for i in solution.ibinding:
+            print(i)
+        for i in solution.obinding:
+            print(i)
+        counter_example = solution.verify()
+
+        if counter_example is None:
+            print("Passed verification")
+        else:
+            print("Failed verification")
+            print(counter_example)
+
+test_rr()

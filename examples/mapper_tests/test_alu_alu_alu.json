@@ -1,9 +1,9 @@
 {
     "outputs": [
-        "6_out"
+        "3_out"
     ],
     "bit_outputs": [
-        "6_out"
+        
     ],
     "input_width": 16,
     "output_width": 16,
@@ -19,32 +19,14 @@
         {
         "id": "2_out",
         "type": "alu",
-        "in0": "in2",
-        "in1": "in3"
+        "in0": "1_out",
+        "in1": "in2"
         },
         {
         "id": "3_out",
         "type": "alu",
-        "in0": "in4",
-        "in1": "in5"
-        },
-        {
-        "id": "4_out",
-        "type": "alu",
-        "in0": "1_out",
-        "in1": "2_out"
-        },
-        {
-        "id": "5_out",
-        "type": "alu",
         "in0": "2_out",
-        "in1": "3_out"
-        },
-        {
-        "id": "6_out",
-        "type": "alu",
-        "in0": "4_out",
-        "in1": "5_out"
+        "in1": "in3"
         }
     ]
 }

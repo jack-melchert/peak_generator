@@ -1,7 +1,7 @@
 import json
 
 class Arch():
-    def __init__(self, input_width, output_width, num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_mul, num_add, num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, inputs, bit_inputs, outputs, bit_outputs, enable_input_regs, enable_output_regs):
+    def __init__(self, input_width, output_width, num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_mul, num_add, num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_mux_sel, num_reg_mux, num_output_mux, inputs, bit_inputs, outputs, bit_outputs, enable_input_regs, enable_output_regs):
         self.input_width = input_width
         self.output_width = output_width
         self.num_inputs = num_inputs
@@ -16,6 +16,7 @@ class Arch():
         self.num_const_inputs = num_const_inputs
         self.num_mux_in0 = num_mux_in0
         self.num_mux_in1 = num_mux_in1
+        self.num_mux_sel = num_mux_sel
         self.num_reg_mux = num_reg_mux
         self.num_output_mux = num_output_mux
         self.inputs = inputs
@@ -29,7 +30,7 @@ class Arch():
         self.enable_output_regs = enable_output_regs
 			
 class module():
-    def __init__(self, id, type_, in0, in1, in_width, out_width, sel=""):
+    def __init__(self, id, type_, in0, in1, in_width, out_width, sel=[""]):
         self.id = id
         self.type_ = type_
         self.in0 = in0
@@ -62,6 +63,7 @@ def read_arch(json_file_str):
         num_const_inputs = 0
         num_mux_in0 = 0
         num_mux_in1 = 0
+        num_mux_sel = 0 
         num_reg_mux = 0
         modules_json = json_in['modules']
         modules = []
@@ -139,8 +141,14 @@ def read_arch(json_file_str):
                 if len(new_module.in1) > 1:
                     num_mux_in1 += 1
 
-                if new_module.sel:
-                    bit_inputs.append(new_module.sel)
+                if new_module.type_ == "mux":
+                    if not isinstance(new_module.sel, list):
+                        new_module.sel = [new_module.sel]
+                    for sel in new_module.sel:
+                        if sel not in bit_inputs:
+                            bit_inputs.append(sel)
+                    if len(new_module.sel) > 1:
+                        num_mux_sel += 1
 
                 if new_module.id in ids:
                     raise ValueError('Two modules with the same ID')
@@ -163,6 +171,8 @@ def read_arch(json_file_str):
                 module_.in0 = [module_.in0]
             if not isinstance(module_.in1, list):
                 module_.in1 = [module_.in1]
+            if not isinstance(module_.sel, list):
+                module_.sel = [module_.sel]
 
         outputs = []
         num_output_mux = 0
@@ -181,7 +191,7 @@ def read_arch(json_file_str):
             bit_outputs.append(bit_out)
 
         arch = Arch(width, json_in.get('output_width', width), num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_mul, num_add,
-                    num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_reg_mux, num_output_mux, unique_inputs, unique_bit_inputs, outputs, bit_outputs, 
+                    num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_mux_sel, num_reg_mux, num_output_mux, unique_inputs, unique_bit_inputs, outputs, bit_outputs, 
                     json_in.get('enable_input_regs', False), json_in.get('enable_output_regs', False))
         arch.modules = modules
         arch.regs = regs
@@ -208,6 +218,7 @@ def graph_arch(arch: Arch):
 
     mux_in0_idx = 0
     mux_in1_idx = 0
+    mux_sel_idx = 0
 
     for module in arch.modules:
         if module.type_ == "alu":
@@ -216,6 +227,19 @@ def graph_arch(arch: Arch):
             pe_subgraph.node(str(module.id), "add", shape='box')
         elif module.type_ == "mul":
             pe_subgraph.node(str(module.id), "mul", shape='box')
+        elif module.type_ == "mux":
+            pe_subgraph.node(str(module.id), "mux", shape='box')
+                
+            if len(module.sel) > 1:
+                pe_subgraph.node("mux_sel_" + str(mux_sel_idx), "mux", shape='invtrapezium')
+
+                for sel in module.sel:
+                    pe_subgraph.edge(str(sel), "mux_sel_" + str(mux_sel_idx), style="dashed")
+
+                pe_subgraph.edge("mux_sel_" + str(mux_sel_idx),str(module.id), style="dashed")  
+                mux_sel_idx += 1
+            else:
+                pe_subgraph.edge(str(module.sel[0]), str(module.id), style="dashed")
         
         if len(module.in0) > 1:
             pe_subgraph.node("mux_in0_" + str(mux_in0_idx), "mux", shape='invtrapezium')
@@ -240,7 +264,6 @@ def graph_arch(arch: Arch):
             pe_subgraph.edge(str(module.in1[0]), str(module.id))
 
 
-    # import pdb; pdb.set_trace()
     mux_reg_idx = 0
     for reg in arch.regs:
         pe_subgraph.node(str(reg.id), "reg", shape='box')
@@ -281,7 +304,7 @@ def graph_arch(arch: Arch):
     for i, output in enumerate(arch.bit_outputs):
         
         outputs_subgraph.node("bit_out_" + str(i), "bit_out" + str(i), shape='circle')
-        graph.edge(str(output), "bit_out_" + str(i))
+        graph.edge(str(output), "bit_out_" + str(i), style="dashed")
 
 
     graph.subgraph(outputs_subgraph)

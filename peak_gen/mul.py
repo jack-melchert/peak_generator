@@ -6,16 +6,9 @@ import magma
 from ast_tools.passes import begin_rewrite, end_rewrite, loop_unroll, if_inline
 from ast_tools.macros import inline
 from peak.family import AbstractFamily
+from .isa import Signed_t, MUL_t
 
 
-class MUL_t(Enum):
-    Mult0 = 0x0
-    Mult1 = 0x1
-
-
-class Signed_t(Enum):
-    unsigned = 0
-    signed = 1
 
 @family_closure
 def MUL_fc(family : AbstractFamily):

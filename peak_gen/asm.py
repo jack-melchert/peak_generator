@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from .isa import inst_arch_closure
-from .alu import ALU_t
-from .mul import MUL_t
+from .isa import ALU_t
+from .isa import MUL_t
+from .isa import Signed_t
 from .cond import Cond_t
 import magma as m
 from peak import family, family_closure
@@ -43,9 +44,10 @@ def asm_arch_closure(arch):
         if arch.num_reg_mux > 0:
             mux_list_type_reg = Inst.mux_reg
 
-
         if arch.num_output_mux > 0:
             mux_list_type_output = Inst.mux_out
+
+        Signed_list_type = Inst.signed
 
         ALU_default = [ALU_t.Add for _ in range(arch.num_alu)]
         Cond_default = [Cond_t.Z for _ in range(arch.num_alu + arch.num_add)]
@@ -55,13 +57,12 @@ def asm_arch_closure(arch):
         mux_in1_default = [family.BitVector[1](0) for _ in range(arch.num_mux_in1)]
         mux_reg_default = [family.BitVector[1](0) for _ in range(arch.num_reg_mux)]
         mux_out_default = [family.BitVector[1](0) for _ in range(arch.num_output_mux)]
-        Signed_t = Inst.signed
-
+        signed_default = [Signed_t.unsigned for _ in range(arch.num_alu + arch.num_mul)]
 
 
         def gen_inst(alu = ALU_default, cond=Cond_default, mul = MUL_default, const = Const_default, mux_in0 = mux_in0_default, \
         mux_in1 = mux_in1_default, mux_reg = mux_reg_default, mux_out = mux_out_default, \
-        signed=Signed_t.unsigned, lut=0):
+        signed=signed_default, lut=0):
 
             args = []
 
@@ -90,7 +91,7 @@ def asm_arch_closure(arch):
                 args.append(mux_list_type_output(*mux_out) )
 
 
-            args.append(signed )
+            args.append(Signed_list_type(*signed))
             args.append(LUT_t(lut) )
 
             return Inst(*args)

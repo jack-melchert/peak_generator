@@ -1,13 +1,14 @@
 import fault
 import magma
 import shutil
-from peak.assembler import Assembler
+from peak.assembler import Assembler, MagmaADT
 from peak import wrap_with_disassembler
 from peak_gen import pe_arch_closure, inst_arch_closure
 from peak_gen.arch import read_arch
 from peak_gen.asm import asm_arch_closure
 from peak_gen.alu import ALU_t, Signed_t
 from peak_gen.mul import MUL_t
+from peak_gen.cond import Cond_t
 from hwtypes import Bit, BitVector
 from hwtypes.adt import Tuple
 from peak import family
@@ -50,7 +51,7 @@ def test_pe_gen(arch_file):
     _assembler = Assembler(inst_type)
     assembler = _assembler.assemble
     disassembler = _assembler.disassemble
-    width = _assembler.width
+    # width = _assembler.width
     layout = _assembler.layout
 
 
@@ -166,6 +167,8 @@ def test_pe_gen(arch_file):
                 signals[arch.modules[mod].id] = in0 + in1
             elif (arch.modules[mod].type_ == "add"):
                 signals[arch.modules[mod].id] = in0 + in1
+            elif (arch.modules[mod].type_ == "mux"):
+                signals[arch.modules[mod].id] = in1 if signals[arch.modules[mod].sel] == 0 else in0
 
         signals_new = signals.copy()
         mux_idx_reg = 0
@@ -194,6 +197,8 @@ def test_pe_gen(arch_file):
                     if out_mux_select == out_inputs:
                         res_comp.append(signals[out[out_inputs]])
 
+
+        res_comp = [Data(res) for res in res_comp]
         print("Int test result: cycle", cyc, "=", res_comp)
 
         pe = PE_bv()
@@ -206,56 +211,54 @@ def test_pe_gen(arch_file):
         if (arch.enable_output_regs):
             res_pe = pe(inst_gen, inputs_to_PE)
 
-        # import pdb; pdb.set_trace()
         print("functional test result: ", [res_pe[i].value for i in range(num_outputs)])
-        assert Data(res_comp) == [res_pe[i].value for i in range(num_outputs)] 
+        assert res_comp  == [res_pe[i].value for i in range(num_outputs)] 
 
 
-    # PE_magma = PE_fc(family.MagmaFamily())
-    # instr_magma_type = type(PE_magma.interface.ports[inst_name])
-    # pe_circuit = wrap_with_disassembler(PE_magma, disassembler, width,
-    #                                         HashableDict(layout),
-    #                                         instr_magma_type)
-    # # import pdb; pdb.set_trace()
-    # tester = fault.Tester(pe_circuit, clock=pe_circuit.CLK)
-    # test_dir = "tests/build"
+        # PE_magma = PE_fc(family.MagmaFamily())
+        # instr_magma_type = type(PE_magma.interface.ports[inst_name])
+        # pe_circuit = wrap_with_disassembler(PE_magma, disassembler, width,
+        #                                         HashableDict(layout),
+        #                                         instr_magma_type)
+        # tester = fault.Tester(pe_circuit, clock=pe_circuit.CLK)
+        # test_dir = "tests/build"
 
-    # tester.clear()
-    # # Advance timestep past 0 for fp functional model (see rnd logic)
-    # tester.circuit.ASYNCRESET = 0
-    # tester.eval()
-    # tester.circuit.ASYNCRESET = 1
-    # tester.eval()
-    # tester.circuit.ASYNCRESET = 0
-    # tester.eval()
-
-    # DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
+        # tester.clear()
+        # # Advance timestep past 0 for fp functional model (see rnd logic)
+        # tester.circuit.ASYNCRESET = 0
+        # tester.eval()
+        # tester.circuit.ASYNCRESET = 1
+        # tester.eval()
+        # tester.circuit.ASYNCRESET = 0
+        # tester.eval()
 
 
-    # tester.circuit.inst = assembler(inst_gen)
-    # tester.circuit.CLK = 0
-    # tester.circuit.inputs = inputs_to_PE[0].concat(inputs_to_PE[1])
+        # DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
+        # asm_adt = Assembler(DataInputList)
 
-    # # import pdb; pdb.set_trace()
-    # tester.eval()
 
-    # if (arch.enable_input_regs):
-    #     tester.step(2)
+        # # tester.circuit.inputs = asm_adt.assemble(DataInputList(*inputs_to_PE))
+        # # tester.circuit.inst = assembler(inst_gen)
+        # tester.circuit.CLK = 0
 
-    # if (arch.enable_output_regs):
-    #     tester.step(2)
+        # # import pdb; pdb.set_trace()
+        # tester.eval()
 
-    # for _ in range(num_sim_cycles - 1):
-    #     tester.step(2)
+        # if (arch.enable_input_regs):
+        #     tester.step(2)
+
+        # if (arch.enable_output_regs):
+        #     tester.step(2)
+
+        # for _ in range(num_sim_cycles - 1):
+        #     tester.step(2)
+            
+        # tester.circuit.O0.expect(magma.BitVector[16](0))
         
-    # tester.circuit.O0.expect(magma.BitVector[16](0))
-    
-        
+            
 
-    # tester.compile_and_run(target="verilator",
-    #                         directory=test_dir,
-    #                         flags=['-Wno-UNUSED', '-Wno-PINNOCONNECT'])
+        # tester.compile_and_run("system-verilog", simulator="ncsim", directory=test_dir)
 
 
 
-test_pe_gen("examples/misc_tests/test_mul.json")
+test_pe_gen("examples/misc_tests/test_alu.json")
