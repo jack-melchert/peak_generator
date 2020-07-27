@@ -1,0 +1,20 @@
+{
+    "outputs": [
+      "alu_out"
+    ],
+    "bit_outputs": [
+      "alu_out"
+    ],
+    "input_width": 2,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "alu_out",
+        "type": "alu",
+        "in0": "in0",
+        "in1": "in1"
+      }
+    ]
+}
+  

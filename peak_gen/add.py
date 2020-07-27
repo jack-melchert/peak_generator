@@ -1,5 +1,5 @@
 from peak import Peak, name_outputs, family_closure
-from .common import DATAWIDTH
+# from .common import DATAWIDTH
 import magma
 from peak.family import AbstractFamily
 

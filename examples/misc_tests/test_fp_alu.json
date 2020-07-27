@@ -1,0 +1,19 @@
+{
+    "outputs": [
+      "alu_out"
+    ],
+    "bit_outputs": [
+    ],
+    "input_width": 16,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "alu_out",
+        "type": "fp_alu",
+        "in0": "aluin0",
+        "in1": "aluin1"
+      }
+    ]
+}
+  

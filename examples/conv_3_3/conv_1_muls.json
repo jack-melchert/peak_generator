@@ -2,6 +2,9 @@
     "outputs": [
       30
     ],
+    "bit_outputs": [
+      
+    ],
     "width": 16,
     "modules": [
       {

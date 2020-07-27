@@ -1,5 +1,5 @@
-from peak import Peak, family_closure, name_outputs, gen_register
-from hwtypes import Tuple
+from peak import Peak, family_closure, name_outputs, gen_register, Const
+from hwtypes.adt import Tuple, Product
 from functools import lru_cache
 import magma as m
 import hwtypes
@@ -8,82 +8,60 @@ from ast_tools.passes import begin_rewrite, end_rewrite, loop_unroll, if_inline
 from ast_tools.macros import inline
 import inspect
 from .common import *
-from .mode import gen_register_mode
 from .lut import LUT_fc
 from .alu import ALU_fc
+from .fp_alu import FP_ALU_fc, fp_unit_fc
 from .add import ADD_fc
 from .cond import Cond_fc
 from .isa import inst_arch_closure
 from .arch import *
 from .mul import MUL_fc
-from .config import config_arch_closure
-from .enables import enables_arch_closure
+from .mux import MUX_fc
 from peak.assembler import Assembler, AssembledADT
 from peak.family import AbstractFamily
 import peak 
 
-def arch_closure(arch):
+def pe_arch_closure(arch):
     @family_closure
     def PE_fc(family: AbstractFamily):
+
         BitVector = family.BitVector
-    
-        #Hack
-        def BV1(bit):
-            return bit.ite(family.BitVector[1](1), family.BitVector[1](0))
-        
         Data = family.BitVector[arch.input_width]
         Out_Data = family.BitVector[arch.output_width]
-        UBit = family.Unsigned[1]
-        Data8 = family.BitVector[8]
-        Data32 = family.BitVector[32]
-        UData32 = family.Unsigned[32]
+
         Bit = family.Bit
-        ConstRegister = gen_register_mode(Data, 0)(family)
         Register = gen_register(Data, 0)(family)
-        BitReg = gen_register_mode(Bit, 0)(family)
+        Bit_Register = gen_register(Bit, 0)(family)
+
         ALU_bw = ALU_fc(family)
+        FP_ALU_bw = FP_ALU_fc(family)
+        fp_unit_bw = fp_unit_fc(family)
         ADD_bw = ADD_fc(family)
         LUT = LUT_fc(family)
         MUL_bw = MUL_fc(family)
+        MUX_bw = MUX_fc(family)
         Inst_fc = inst_arch_closure(arch)
         Inst = Inst_fc(family)
-        Config_fc = config_arch_closure(arch)
-        Config = Config_fc(family)
-        Enables_fc = enables_arch_closure(arch)
-        Enables = Enables_fc(family)
         Cond = Cond_fc(family)
 
-
         DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
-        DataInputListDefault = DataInputList(*[Data(0) for _ in range(arch.num_inputs)])
-        ConfigDataList = Tuple[(Data for _ in range(arch.num_const_reg))]
-        RegEnList = Tuple[(Bit for _ in range(arch.num_reg))]
+        BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs))]
 
-        if arch.num_reg > 0:
-            RegEnListDefault_temp = [Bit(1) for _ in range(arch.num_reg)]
-            RegEnListDefault = Enables(Bit(1), RegEnList(*RegEnListDefault_temp))
-        else:
-            RegEnListDefault = Enables(Bit(1))
+        BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs)])
 
-        Config_default_list = [Data(0) for _ in range(arch.num_const_reg)]
-        if (arch.num_const_reg > 0):
-            Config_default = Config(family.BitVector[3](0), ConfigDataList(*Config_default_list))
-        else:
-            Config_default = Config(family.BitVector[3](0))
+        Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
+        Output_Tc = family.get_constructor(Output_T)
 
-   
-        if family == peak.family.MagmaFamily():
-            DataOutputList = m.Tuple[(Out_Data for _ in range(arch.num_outputs))]
-            Out_constructor = DataOutputList
-        elif family == peak.family.SMTFamily():
-            DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
-            DataOutputList_t = AssembledADT[DataOutputList, Assembler, family.BitVector]
-            Out_constructor = DataOutputList_t.from_fields
-        elif family == peak.family.PyFamily():
-            DataOutputList = Tuple[(Out_Data for _ in range(arch.num_outputs))]
-            Out_constructor = DataOutputList
+        class fp_val(Product):
+            res = Data
+            res_p = Bit
+            Z = Bit
+            N = Bit
+            C = Bit
+            V = Bit  
 
-
+        # Bit_Output_T = Tuple[(Bit for _ in range(arch.num_bit_outputs))]
+        # Bit_Output_Tc = family.get_constructor(Bit_Output_T)
 
         @family.assemble(locals(), globals())
         class PE(Peak, typecheck=True):
@@ -97,93 +75,77 @@ def arch_closure(arch):
                 if inline(arch.enable_input_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_inputs)):
                         self.input_reg_symbol_interpolate: Register = Register()
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
+                        self.bit_input_reg_symbol_interpolate: Bit_Register = Bit_Register()
 
                 if inline(arch.enable_output_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_outputs)):
                         self.output_reg_symbol_interpolate: Register = Register()
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_outputs)):
+                        self.bit_output_reg_symbol_interpolate: Bit_Register = Bit_Register()
 
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_reg)):
                     self.regs_symbol_interpolate: Register = Register()
 
-                for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_const_reg)):
-                    self.const_reg_symbol_interpolate: ConstRegister = ConstRegister()
-
                 for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
                     if inline(arch.modules[symbol_interpolate].type_ == 'alu'):
-                        self.modules_symbol_interpolate: type(ALU_bw(arch.input_width)) = ALU_bw(arch.modules[symbol_interpolate].in_width)()
+                        self.modules_symbol_interpolate: type(ALU_bw(arch.modules[symbol_interpolate].in_width)) = ALU_bw(arch.modules[symbol_interpolate].in_width)()
+                        self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'fp_alu'):
+                        self.modules_symbol_interpolate: type(FP_ALU_bw(arch.modules[symbol_interpolate].in_width)) = FP_ALU_bw(arch.modules[symbol_interpolate].in_width)()
+                        self.cond_symbol_interpolate: Cond = Cond()
                     if inline(arch.modules[symbol_interpolate].type_ == 'mul'):
                         self.modules_symbol_interpolate: type(MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)) = MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)()
                     if inline(arch.modules[symbol_interpolate].type_ == 'add'):
                         self.modules_symbol_interpolate: type(ALU_bw(arch.input_width)) = ADD_bw(arch.input_width)()
-                # Bit Registers
-                self.regd: BitReg = BitReg()
-                self.rege: BitReg = BitReg()
-                self.regf: BitReg = BitReg()
+                        self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'mux'):
+                        self.modules_symbol_interpolate: type(MUX_bw(arch.input_width)) = MUX_bw(arch.input_width)()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'lut'):
+                        self.modules_symbol_interpolate: LUT = LUT()
 
-                #Condition code
-                self.cond: Cond = Cond()
 
-                #Lut
-                self.lut: LUT = LUT()
 
             @end_rewrite()
             @if_inline()
             @loop_unroll()
             @loop_unroll()
             @begin_rewrite()
-            # @name_outputs(PE_res=DataOutputList, res_p=UBit, read_config_data=UData32)
-            def __call__(self, inst: Inst, \
-                inputs : DataInputList = DataInputListDefault, \
-                enables : Enables = RegEnListDefault, \
-                config_addr : Data8 = Data8(0), \
-                config_data : Config = Config_default, \
-                config_en : Bit = Bit(0) \
-            ) -> (DataOutputList, Bit, Data32):
-      
-                bit012_addr = (config_addr[:3] == BitVector[3](BIT012_ADDR))
+            @name_outputs(pe_outputs=Output_T)
+            def __call__(self, inst: Const(Inst), \
+                inputs: DataInputList, \
+                bit_inputs: BitInputList = BitInputListDefault, \
+                clk_en: Global(Bit) = Bit(1)
+            ) -> (Output_T):
 
-                # Bit registers
-                reg_we = []
 
-                for i in ast_tools.macros.unroll(range(arch.num_const_reg)):
-                    reg_we.append((config_addr == BitVector[8](i)) & config_en)
-
-                #rd
-                rd_we = (bit012_addr & config_en)
-                rd_config_wdata = config_data.config_data_bits[0]
-
-                #re
-                re_we = rd_we
-                re_config_wdata = config_data.config_data_bits[1]
-
-                #rf
-                rf_we = rd_we
-                rf_config_wdata = config_data.config_data_bits[2]
-
-                # Setting bit registers
-                rd, rd_rdata = self.regd(rd_config_wdata, rd_we, enables.clk_en)
-                re, re_rdata = self.rege(re_config_wdata, re_we, enables.clk_en)
-                rf, rf_rdata = self.regf(rf_config_wdata, rf_we, enables.clk_en)
-
+                # calculate lut results
+                # lut_res = self.lut(inst.lut, bit_inputs[0], bit_inputs[1], bit_inputs[2])
 
                 signals = {}
+                bit_signals = {}
+
+                lut_res = bit_inputs[0]
 
                 #  Inputs with or without registers
                 if inline(arch.enable_input_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_inputs)):
-                        signals[arch.inputs[symbol_interpolate]] = self.input_reg_symbol_interpolate(inputs[symbol_interpolate], enables.clk_en)
+                        signals[arch.inputs[symbol_interpolate]] = self.input_reg_symbol_interpolate(inputs[symbol_interpolate], clk_en)
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
+                        bit_signals[arch.bit_inputs[symbol_interpolate]] = self.bit_input_reg_symbol_interpolate(bit_inputs[symbol_interpolate], clk_en)
                         
                 else:
                     for i in ast_tools.macros.unroll(range(arch.num_inputs)):
                         signals[arch.inputs[i]] = inputs[i]
+                    for i in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
+                        bit_signals[arch.bit_inputs[i]] = bit_inputs[i]
                         
-
-                # Constant registers
-                for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_const_reg)):
-                    signals[arch.const_regs[symbol_interpolate].id], _ = self.const_reg_symbol_interpolate(config_data.config_data[symbol_interpolate], reg_we[symbol_interpolate], enables.clk_en)
-
-                #Calculate read_config_data
-                read_config_data = BV1(rd_rdata).concat(BV1(re_rdata)).concat(BV1(rf_rdata)).concat(BitVector[32-3](0))
+                # Constant inputs
+                for i in ast_tools.macros.unroll(range(arch.num_const_inputs)):
+                    if inline(arch.const_inputs[i].width == 1):
+                        bit_signals[arch.const_inputs[i].id] = inst.const_data[i]
+                    else:
+                        signals[arch.const_inputs[i].id] = inst.const_data[i]
 
                 # Pipelining registers
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_reg)):
@@ -192,9 +154,13 @@ def arch_closure(arch):
    
                 mux_idx_in0 = 0
                 mux_idx_in1 = 0
+                mux_idx_in2 = 0
+                signed_idx = 0
                 mul_idx = 0
                 alu_idx = 0
-                alu_res_p = Bit(0)
+                fp_alu_idx = 0
+                lut_idx = 0
+                cond_idx = 0
                 Z = Bit(0)
                 N = Bit(0)
                 C = Bit(0)
@@ -202,38 +168,102 @@ def arch_closure(arch):
 
                 # Loop over modules (ALU, MUL, Adders, etc.)
                 for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
+                    if inline(arch.modules[symbol_interpolate].type_ == "lut"):
+                        if inline(len(arch.modules[symbol_interpolate].in0) == 1):
+                            in0 = bit_signals[arch.modules[symbol_interpolate].in0[0]]  
+                        else:
+                            in0_mux_select = inst.mux_in0[mux_idx_in0]
+                            in0 = bit_signals[arch.modules[symbol_interpolate].in0[0]]
+                            mux_idx_in0 = mux_idx_in0 + 1
+                            for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in0))):
+                                if in0_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in0))](mux_inputs):
+                                    in0 = bit_signals[arch.modules[symbol_interpolate].in0[mux_inputs]]
+                                
+                        if inline(len(arch.modules[symbol_interpolate].in1) == 1):
+                            in1 = bit_signals[arch.modules[symbol_interpolate].in1[0]]  
+                        else:
+                            in1_mux_select = inst.mux_in1[mux_idx_in1]
+                            in1 = bit_signals[arch.modules[symbol_interpolate].in1[0]]
+                            mux_idx_in1 = mux_idx_in1 + 1
+                            for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in1))):
+                                if in1_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in1))](mux_inputs):
+                                    in1 = bit_signals[arch.modules[symbol_interpolate].in1[mux_inputs]]
 
-                    if inline(len(arch.modules[symbol_interpolate].in0) == 1):
-                        in0 = signals[arch.modules[symbol_interpolate].in0[0]]  
+                        if inline(len(arch.modules[symbol_interpolate].in2) == 1):
+                            in2 = bit_signals[arch.modules[symbol_interpolate].in2[0]]  
+                        else:
+                            in2_mux_select = inst.mux_in2[mux_idx_in2]
+                            in2 = bit_signals[arch.modules[symbol_interpolate].in2[0]]
+                            mux_idx_in2 = mux_idx_in2 + 1
+                            for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in2))):
+                                if in2_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in2))](mux_inputs):
+                                    in2 = bit_signals[arch.modules[symbol_interpolate].in2[mux_inputs]]
+
+                        bit_signals[arch.modules[symbol_interpolate].id] = self.modules_symbol_interpolate(inst.lut[lut_idx], in0, in1, in2)
+                        lut_idx = lut_idx + 1
                     else:
-                        in0_mux_select = inst.mux_in0[mux_idx_in0]
-                        in0 = signals[arch.modules[symbol_interpolate].in0[0]]
-                        mux_idx_in0 = mux_idx_in0 + 1
-                        for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in0))):
-                            if in0_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in0))](mux_inputs):
-                                in0 = signals[arch.modules[symbol_interpolate].in0[mux_inputs]]
-                            
-                    if inline(len(arch.modules[symbol_interpolate].in1) == 1):
-                        in1 = signals[arch.modules[symbol_interpolate].in1[0]]  
-                    else:
-                        in1_mux_select = inst.mux_in1[mux_idx_in1]
-                        in1 = signals[arch.modules[symbol_interpolate].in1[0]]
-                        mux_idx_in1 = mux_idx_in1 + 1
-                        for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in1))):
-                            if in1_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in1))](mux_inputs):
-                                in1 = signals[arch.modules[symbol_interpolate].in1[mux_inputs]]
 
-                    if inline(arch.modules[symbol_interpolate].type_ == "mul"):
-                        signals[arch.modules[symbol_interpolate].id] = self.modules_symbol_interpolate(inst.mul[mul_idx], inst.signed, in0, in1)
-                        mul_idx = mul_idx + 1
-                        
-                    elif inline(arch.modules[symbol_interpolate].type_ == "alu"):
-                        signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.alu[alu_idx], inst.signed, in0, in1, rd)
-                        alu_idx = alu_idx + 1
+                        if inline(len(arch.modules[symbol_interpolate].in0) == 1):
+                            in0 = signals[arch.modules[symbol_interpolate].in0[0]]  
+                        else:
+                            in0_mux_select = inst.mux_in0[mux_idx_in0]
+                            in0 = signals[arch.modules[symbol_interpolate].in0[0]]
+                            mux_idx_in0 = mux_idx_in0 + 1
+                            for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in0))):
+                                if in0_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in0))](mux_inputs):
+                                    in0 = signals[arch.modules[symbol_interpolate].in0[mux_inputs]]
+                                
+                        if inline(len(arch.modules[symbol_interpolate].in1) == 1):
+                            in1 = signals[arch.modules[symbol_interpolate].in1[0]]  
+                        else:
+                            in1_mux_select = inst.mux_in1[mux_idx_in1]
+                            in1 = signals[arch.modules[symbol_interpolate].in1[0]]
+                            mux_idx_in1 = mux_idx_in1 + 1
+                            for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in1))):
+                                if in1_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in1))](mux_inputs):
+                                    in1 = signals[arch.modules[symbol_interpolate].in1[mux_inputs]]
 
-                    elif inline(arch.modules[symbol_interpolate].type_ == "add"):
-                        signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
+                        if inline(arch.modules[symbol_interpolate].type_ == "mul"):
+                            signals[arch.modules[symbol_interpolate].id] = self.modules_symbol_interpolate(inst.mul[mul_idx], inst.signed[signed_idx], in0, in1)
+                            signed_idx = signed_idx + 1
+                            mul_idx = mul_idx + 1
                             
+                        elif inline(arch.modules[symbol_interpolate].type_ == "alu"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.alu[alu_idx], inst.signed[signed_idx], in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, Z, N, C, V)
+                            # res_p = bit_signals[arch.modules[symbol_interpolate].id]
+                            cond_idx = cond_idx + 1
+                            signed_idx = signed_idx + 1
+                            alu_idx = alu_idx + 1
+
+                        elif inline(arch.modules[symbol_interpolate].type_ == "fp_alu"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.fp_alu[fp_alu_idx], inst.signed[signed_idx], in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, Z, N, C, V)
+                            cond_idx = cond_idx + 1
+                            signed_idx = signed_idx + 1
+                            fp_alu_idx = fp_alu_idx + 1
+
+                        elif inline(arch.modules[symbol_interpolate].type_ == "add"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, Z, N, C, V)
+                            # res_p = bit_signals[arch.modules[symbol_interpolate].id]
+                            cond_idx = cond_idx + 1
+
+                        elif inline(arch.modules[symbol_interpolate].type_ == "mux"):
+
+                            if inline(len(arch.modules[symbol_interpolate].in2) == 1):
+                                in2 = bit_signals[arch.modules[symbol_interpolate].in2[0]]  
+                            else:
+                                sel_mux_select = inst.mux_in2[mux_idx_in2]
+                                in2 = bit_signals[arch.modules[symbol_interpolate].in2[0]]
+                                mux_idx_in2 = mux_idx_in2 + 1
+                                for mux_inputs in ast_tools.macros.unroll(range(len(arch.modules[symbol_interpolate].in2))):
+                                    if sel_mux_select == family.BitVector[m.math.log2_ceil(len(arch.modules[symbol_interpolate].in2))](mux_inputs):
+                                        in2 = bit_signals[arch.modules[symbol_interpolate].in2[mux_inputs]]
+
+
+                            signals[arch.modules[symbol_interpolate].id] = self.modules_symbol_interpolate(in0, in1, in2)
+                                
 
                 # Register assignment
                 reg_mux_idx = 0
@@ -249,21 +279,18 @@ def arch_closure(arch):
                             if in_mux_select == family.BitVector[m.math.log2_ceil(len(arch.regs[symbol_interpolate].in_))](mux_inputs):
                                 in_ = signals[arch.regs[symbol_interpolate].in_[mux_inputs]]
                             
-                    signals[arch.regs[symbol_interpolate].id] = self.regs_symbol_interpolate(in_, enables.clk_en.ite(enables.reg_enables[symbol_interpolate], Bit(0)))
+                    signals[arch.regs[symbol_interpolate].id] = self.regs_symbol_interpolate(in_, clk_en)
 
-                # calculate lut results
-                lut_res = self.lut(inst.lut, rd, re, rf)
-
-                # calculate 1-bit result
-                res_p = self.cond(inst.cond, alu_res_p, lut_res, Z, N, C, V)
                 
                 # Output assignment
                 outputs = []
+                bit_outputs = []
                 mux_idx_out = 0
+                mux_idx_bit_out = 0
                 for out_index in ast_tools.macros.unroll(range(arch.num_outputs)):
                     if inline(len(arch.outputs[out_index]) == 1):
                         outputs.append(signals[arch.outputs[out_index][0]])
-                    else:
+                    elif inline(len(arch.outputs[out_index]) > 1):
                         output_temp = signals[arch.outputs[out_index][0]]
                         out_mux_select = inst.mux_out[mux_idx_out]
                         mux_idx_out = mux_idx_out + 1
@@ -272,21 +299,117 @@ def arch_closure(arch):
                                 output_temp = signals[arch.outputs[out_index][mux_inputs]]
                         outputs.append(output_temp)
 
+                # for out_index in ast_tools.macros.unroll(range(arch.num_bit_outputs)):
+                #     bit_outputs.append(bit_signals[arch.bit_outputs[out_index]])
+
+                for bit_out_index in ast_tools.macros.unroll(range(arch.num_bit_outputs)):
+                    if inline(len(arch.bit_outputs[bit_out_index]) == 1):
+                        bit_outputs.append(bit_signals[arch.bit_outputs[bit_out_index][0]])
+                    elif inline(len(arch.bit_outputs[bit_out_index]) > 1):
+                        bit_output_temp = bit_signals[arch.bit_outputs[bit_out_index][0]]
+                        out_mux_select = inst.mux_bit_out[mux_idx_bit_out]
+                        mux_idx_bit_out = mux_idx_bit_out + 1
+                        for mux_inputs in ast_tools.macros.unroll(range(len(arch.bit_outputs[bit_out_index]))):
+                            if out_mux_select == family.BitVector[m.math.log2_ceil(len(arch.bit_outputs[bit_out_index]))](mux_inputs):
+                                bit_output_temp = bit_signals[arch.bit_outputs[bit_out_index][mux_inputs]]
+                        bit_outputs.append(bit_output_temp)
 
 
                 if inline(arch.enable_output_regs):
                     outputs_from_reg = []
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_outputs)):
-                        temp = self.output_reg_symbol_interpolate(outputs[symbol_interpolate], enables.clk_en)
+                        temp = self.output_reg_symbol_interpolate(outputs[symbol_interpolate], clk_en) 
+                        outputs_from_reg.append(temp)
+                    for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_outputs)):
+                        temp = self.bit_output_reg_symbol_interpolate(bit_outputs[symbol_interpolate], clk_en)
                         outputs_from_reg.append(temp)
 
                     # return 16-bit result, 1-bit result
-                    return Out_constructor(*outputs_from_reg), res_p, read_config_data
+                    return Output_Tc(*outputs_from_reg)
                     
                 else:
-                    return Out_constructor(*outputs), res_p, read_config_data
+                    outputs = outputs + bit_outputs
+                    return Output_Tc(*outputs)
+
+
+      
+                
+            num_fp = 0
+            for m in ast_tools.macros.unroll(range(len(arch.modules))):
+                if arch.modules[m].type_ == 'alu':
+                    if arch.modules[m].in_width == 16:
+                        num_fp += 1
+
+            fp_vals = Tuple[(fp_val for _ in range(num_fp))]
 
             # print(inspect.getsource(__init__)) 
             # print(inspect.getsource(__call__)) 
+            @end_rewrite()
+            @if_inline()
+            @loop_unroll()
+            @begin_rewrite()
+            def _set_fp(self, fp_vals : fp_vals):
+                i = 0
+                for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
+                    if inline(arch.modules[symbol_interpolate].type_ == 'fp_alu'):
+                        module = self.modules_symbol_interpolate
+                        module.fp_unit._set_fp(fp_vals[i].res, fp_vals[i].res_p, fp_vals[i].Z, fp_vals[i].N, fp_vals[i].C, fp_vals[i].V)
+                        i += 1
+                         
+
         return PE
     return PE_fc
+
+
+def wrapped_pe_arch_closure(arch):
+    
+    @family_closure
+    def Wrapped_PE_fc(family: AbstractFamily):
+        BitVector = family.BitVector
+        Data = family.BitVector[arch.input_width]
+        Out_Data = family.BitVector[arch.output_width]
+        Bit = family.Bit
+
+        DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
+        BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs))]
+
+        BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs)])
+
+        Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
+        Output_Tc = family.get_constructor(Output_T)
+
+        Inst_fc = inst_arch_closure(arch)
+        Inst = Inst_fc(family)
+
+        class fp_val(Product):
+            res = Data
+            res_p = Bit
+            Z = Bit
+            N = Bit
+            C = Bit
+            V = Bit        
+
+        PE = pe_arch_closure(arch)(family)
+
+
+
+        fp_vals_t = Tuple[(fp_val for _ in range(arch.num_fp_alu))]
+        
+        @family.assemble(locals(), globals())
+        class Wrapped_PE(Peak):
+            def __init__(self):
+                self.pe : PE = PE()
+
+            @name_outputs(pe_outputs=Output_T)
+            def __call__(self, fp_vals : fp_vals_t, inst : Const(Inst), inputs: DataInputList, \
+                    bit_inputs: BitInputList = BitInputListDefault, \
+                    clk_en: Global(Bit) = Bit(1)) -> Output_T:
+
+
+                self.pe._set_fp(fp_vals)
+                return self.pe(inst, inputs, bit_inputs, clk_en)
+
+        return Wrapped_PE
+    return Wrapped_PE_fc
+
+    

@@ -5,6 +5,9 @@
     50,
     40
   ],
+  "bit_outputs": [
+    60
+  ],
   "enable_input_regs": true,
   "enable_output_regs": true,
   "modules": [

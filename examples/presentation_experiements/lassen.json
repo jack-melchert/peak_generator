@@ -2,6 +2,9 @@
     "outputs": [
       ["alu_out", "mul_out"]
     ],
+    "bit_outputs": [
+      
+    ],
     "width": 16,
     "enable_input_regs": false,
     "enable_output_regs": false,

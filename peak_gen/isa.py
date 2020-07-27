@@ -1,37 +1,84 @@
 from .cond import Cond_t
 from .lut import LUT_t_fc
-from .alu import ALU_t, Signed_t
-from .mul import MUL_t
-from .common import DATAWIDTH
 from peak import Const, family_closure
-from hwtypes import Tuple, Product
+from hwtypes import Tuple, Product, Enum
 import magma as m
 """
 https://github.com/StanfordAHA/CGRAGenerator/wiki/PE-Spec
 """
+class Signed_t(Enum):
+    unsigned = Enum.Auto() 
+    signed = Enum.Auto()
+    
+class ALU_t(Enum):
+    Add = Enum.Auto()
+    Sub = Enum.Auto()
+    Abs = Enum.Auto()
+    GTE_Max = Enum.Auto()
+    LTE_Min = Enum.Auto()
+    SHR = Enum.Auto()
+    SHL = Enum.Auto()
+    Or = Enum.Auto()
+    And = Enum.Auto()
+    XOr = Enum.Auto()
+
+class FP_ALU_t(Enum):
+    FP_add = Enum.Auto()
+    FP_sub = Enum.Auto()
+    FP_cmp = Enum.Auto()
+    FP_mult = Enum.Auto()
+    FGetMant = Enum.Auto()
+    FAddIExp = Enum.Auto()
+    FSubExp = Enum.Auto()
+    FCnvExp2F = Enum.Auto()
+    FGetFInt = Enum.Auto()
+    FGetFFrac = Enum.Auto()
+    FCnvInt2F = Enum.Auto()
+
+class MUL_t(Enum):
+    Mult0 = Enum.Auto()
+    Mult1 = Enum.Auto()
+
+
 def inst_arch_closure(arch):
     @family_closure
     def Inst_fc(family):
-        Data = family.BitVector[DATAWIDTH]
+        Data = family.BitVector[arch.input_width]
         Bit = family.Bit
 
         LUT_t, _ = LUT_t_fc(family)
 
         ALU_t_list_type = Tuple[(ALU_t for _ in range(arch.num_alu))]
+        FP_ALU_t_list_type = Tuple[(FP_ALU_t for _ in range(arch.num_fp_alu))]
+        Cond_t_list_type = Tuple[(Cond_t for _ in range(arch.num_alu + arch.num_add + arch.num_fp_alu))]
         MUL_t_list_type = Tuple[(MUL_t for _ in range(arch.num_mul))]
+        Const_data_list_type = Tuple[(Bit if arch.const_inputs[i].width == 1 else Data for i in range(arch.num_const_inputs))]
+        Signed_list_type = Tuple[(Signed_t for _ in range(arch.num_alu + arch.num_mul + arch.num_fp_alu))]
+        LUT_list_type = Tuple[(LUT_t for _ in range(arch.num_lut))]
         mux_list_type_in0 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in0))] for i in range(len(arch.modules)) if len(arch.modules[i].in0) > 1)]
         mux_list_type_in1 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in1))] for i in range(len(arch.modules)) if len(arch.modules[i].in1) > 1)]
+        mux_list_type_in2 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in2))] for i in range(len(arch.modules)) if len(arch.modules[i].in2) > 1)]
         mux_list_type_reg = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.regs[i].in_))] for i in range(len(arch.regs)) if len(arch.regs[i].in_) > 1)]
         mux_list_type_output = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.outputs[i]))] for i in range(arch.num_outputs) if len(arch.outputs[i]) > 1)]
+        mux_list_type_bit_output = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.bit_outputs[i]))] for i in range(arch.num_bit_outputs) if len(arch.bit_outputs[i]) > 1)]
 
 
         class Inst(Product):
 
             if arch.num_alu > 0:
-                alu= ALU_t_list_type
+                alu = ALU_t_list_type
+
+            if arch.num_fp_alu > 0:
+                fp_alu = FP_ALU_t_list_type
+            
+            if arch.num_alu + arch.num_add + arch.num_fp_alu > 0:
+                cond = Cond_t_list_type  
                 
-            if arch.num_mul > 0:          # ALU operation
-                mul= MUL_t_list_type
+            if arch.num_mul > 0:
+                mul = MUL_t_list_type
+
+            if arch.num_const_inputs > 0:
+                const_data = Const_data_list_type
 
             if arch.num_mux_in0 > 0:
                 mux_in0 = mux_list_type_in0
@@ -39,15 +86,24 @@ def inst_arch_closure(arch):
             if arch.num_mux_in1 > 0:
                 mux_in1 = mux_list_type_in1
 
+            if arch.num_mux_in2 > 0:
+                mux_in2 = mux_list_type_in2
+
             if arch.num_reg_mux > 0:
                 mux_reg = mux_list_type_reg
 
             if arch.num_output_mux > 0:
                 mux_out = mux_list_type_output
 
-            signed= Signed_t     # unsigned or signed
-            lut= LUT_t          # LUT operation as a 3-bit LUT
-            cond= Cond_t        # Condition code (see cond.py)
+            if arch.num_bit_output_mux > 0:
+                mux_bit_out = mux_list_type_bit_output
+
+            if arch.num_alu + arch.num_mul + arch.num_fp_alu > 0:
+                signed = Signed_list_type     # unsigned or signed
+
+            if arch.num_lut > 0:
+                lut = LUT_list_type          # LUT operation as a 3-bit LUT
+
 
         return Inst
     return Inst_fc

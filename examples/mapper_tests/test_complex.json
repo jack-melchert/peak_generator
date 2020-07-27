@@ -1,0 +1,26 @@
+{
+    "outputs": [
+        ["1_out", "2_out"]
+    ],
+    "bit_outputs": [
+        "2_out"
+      ],
+    "input_width": 16,
+    "output_width": 16,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+        {
+        "id": "1_out",
+        "type": "alu",
+        "in0": "in0",
+        "in1": "in1"
+        },
+        {
+        "id": "2_out",
+        "type": "alu",
+        "in0": "in2",
+        "in1": "in3"
+        }
+    ]
+}
