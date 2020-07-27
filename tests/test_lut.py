@@ -8,7 +8,7 @@ import pytest
 import random
 from peak import family
 
-arch = read_arch(str("examples/misc_tests/test_add.json"))
+arch = read_arch(str("examples/misc_tests/test_lut.json"))
 PE_fc = pe_arch_closure(arch)
 PE = PE_fc(family.PyFamily())
 Data = BitVector[arch.input_width]

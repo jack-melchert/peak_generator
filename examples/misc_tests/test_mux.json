@@ -20,7 +20,7 @@
         "type": "mux",
         "in0": "in2",
         "in1": "in3",
-        "sel": "alu_out_1"
+        "in2": "bit_in0"
       }
     ]
   }

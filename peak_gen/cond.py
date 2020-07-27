@@ -8,34 +8,33 @@ Condition code field - selects which 1-bit result is retuned
 
 
 class Cond_t(Enum):
-    Z = 0    # EQ
+    Z = 0   # EQ
     Z_n = 1  # NE
     C = 2    # UGE
     C_n = 3  # ULT
     # Prefix _N because it clobbers magma's `.N` field used in the array
     # types
-    _N = 4    # <  0
-    _N_n = 5  # >= 0
-    V = 6    # Overflow
-    V_n = 7  # No overflow
+    _N = Enum.Auto()    # <  0
+    _N_n = Enum.Auto()  # >= 0
+    V = Enum.Auto()    # Overflow
+    V_n = Enum.Auto()  # No overflow
     EQ = 0
     NE = 1
     UGE = 2
     ULT = 3
-    UGT = 8
-    ULE = 9
-    SGE = 10
-    SLT = 11
-    SGT = 12
-    SLE = 13
-    LUT = 14
-    ALU = 15
+    UGT = Enum.Auto() 
+    ULE = Enum.Auto() 
+    SGE = Enum.Auto() 
+    SLT = Enum.Auto() 
+    SGT = Enum.Auto() 
+    SLE = Enum.Auto() 
+    ALU = Enum.Auto() 
     FP_EQ = 0
     FP_NE = 1
-    FP_GE = 16
-    FP_GT = 17
-    FP_LE = 18
-    FP_LT = 19
+    FP_GE = Enum.Auto() 
+    FP_GT = Enum.Auto() 
+    FP_LE = Enum.Auto() 
+    FP_LT = Enum.Auto() 
 
 #
 # Implement condition code logic
@@ -49,7 +48,7 @@ def Cond_fc(family : AbstractFamily):
     @family.assemble(locals(), globals())
     class Cond(Peak):
         @name_outputs(cond=Bit)
-        def __call__(self, code: Cond_t, alu: Bit, lut: Bit, Z: Bit, N: Bit, C: Bit, V: Bit) \
+        def __call__(self, code: Cond_t, alu: Bit, Z: Bit, N: Bit, C: Bit, V: Bit) \
                 -> Bit:
             if code == Cond_t.Z:
                 return Z
@@ -81,8 +80,7 @@ def Cond_fc(family : AbstractFamily):
                 return Z | (N != V)
             elif code == Cond_t.ALU:
                 return alu
-            elif code == Cond_t.LUT:
-                return lut
+
             elif code == Cond_t.FP_GE:
                 return ~N | Z
             elif code == Cond_t.FP_GT:

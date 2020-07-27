@@ -5,25 +5,11 @@ from peak.mapper.utils import rebind_type
 from peak.family import AbstractFamily
 from .common import BFloat16_fc
 from peak.family import MagmaFamily, SMTFamily
+from .isa import FP_ALU_t
+from .isa import Signed_t
 from ast_tools.passes import begin_rewrite, end_rewrite, if_inline
 from ast_tools.macros import inline
 
-class FP_ALU_t(Enum):
-    FP_add = 10
-    FP_sub = 11
-    FP_cmp = 12
-    FP_mult = 13
-    FGetMant = 14
-    FAddIExp = 15
-    FSubExp = 16
-    FCnvExp2F = 17
-    FGetFInt = 18
-    FGetFFrac = 19
-    FCnvInt2F = 20
-
-class Signed_t(Enum):
-    unsigned = 0
-    signed = 1
 
 
 @family_closure
@@ -51,7 +37,7 @@ def FP_ALU_fc(family : AbstractFamily):
             def __call__(self, fp_alu: FP_ALU_t, signed_: Signed_t, a: Data, b: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):
                 
 
-                res, res_p, Z, N, C, V = self.fp_unit(alu, signed_, a, b)
+                res, res_p, Z, N, C, V = self.fp_unit(fp_alu, signed_, a, b)
 
                 return res, res_p, Z, N, C, V
 
@@ -103,7 +89,7 @@ def fp_unit_fc(family):
             @if_inline()
             @begin_rewrite()
             @name_outputs(res=Data, res_p=Bit, Z=Bit, N=Bit, C=Bit, V=Bit)
-            def __call__(self, alu: ALU_t, signed_: Signed_t, a: Data, b: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):
+            def __call__(self, alu: FP_ALU_t, signed_: Signed_t, a: Data, b: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):
 
             
                 if inline(not isinstance(family, SMTFamily)):
@@ -113,9 +99,12 @@ def fp_unit_fc(family):
                     a_neg = fp_is_neg(a)
                     b_neg = fp_is_neg(b)
                     C = Bit(0)
+                    N = Bit(0)
+                    Z = Bit(0)
+                    res_p = Bit(0)
                     
 
-                    if alu == ALU_t.FCnvExp2F:
+                    if alu == FP_ALU_t.FCnvExp2F:
                         expa0 = family.BitVector[8](a[7:15])
                         biased_exp0 = SInt[9](expa0.zext(1))
                         unbiased_exp0 = SInt[9](biased_exp0 - SInt[9](127))
@@ -149,7 +138,7 @@ def fp_unit_fc(family):
                         normmant_mul_left = SInt[16](abs_exp)
                         normmant_mul_right = (SInt[16](7)-scale)
                         normmant_mask = SInt[16](0x7F)
-                    else: #alu == ALU_t.FCnvInt2F:
+                    else: #alu == FP_ALU_t.FCnvInt2F:
                         if signed_ == Signed_t.signed:
                             sign = family.BitVector[16]((a) & 0x8000)
                         else:
@@ -198,14 +187,14 @@ def fp_unit_fc(family):
                         normmant_mul_right = (SInt[16](15)-scale)
                         normmant_mask = SInt[16](0x7f00)
 
-                    #if (alu == ALU_t.FCnvInt2F) | (alu == ALU_t.FCnvExp2F):
+                    #if (alu == FP_ALU_t.FCnvInt2F) | (alu == FP_ALU_t.FCnvExp2F):
                     if (scale >= 0):
                         normmant = family.BitVector[16](
                             (normmant_mul_left << normmant_mul_right) & normmant_mask)
                     else:
                         normmant = family.BitVector[16](0)
 
-                    if alu == ALU_t.FCnvInt2F:
+                    if alu == FP_ALU_t.FCnvInt2F:
                         normmant = family.BitVector[16](normmant) >> 8
 
                     biased_scale = scale + 127
@@ -216,22 +205,22 @@ def fp_unit_fc(family):
                     res_p = Bit(0)
 
                 
-                    if (alu == ALU_t.FP_add) | (alu == ALU_t.FP_sub) | (alu == ALU_t.FP_cmp):
+                    if (alu == FP_ALU_t.FP_add) | (alu == FP_ALU_t.FP_sub) | (alu == FP_ALU_t.FP_cmp):
                         #Flip the sign bit of b
-                        if (alu == ALU_t.FP_sub) | (alu == ALU_t.FP_cmp):
+                        if (alu == FP_ALU_t.FP_sub) | (alu == FP_ALU_t.FP_cmp):
                             b = (Data(1) << (width-1)) ^ b
                         a_fpadd = bv2float(a)
                         b_fpadd = bv2float(b)
                         res = float2bv(a_fpadd + b_fpadd)
                         res_p = Bit(0)
-                    elif alu == ALU_t.FP_mult:
+                    elif alu == FP_ALU_t.FP_mult:
                         a_fpmul = bv2float(a)
                         b_fpmul = bv2float(b)
                         res = float2bv(a_fpmul * b_fpmul)
                         res_p = Bit(0)
-                    elif alu == ALU_t.FGetMant:
+                    elif alu == FP_ALU_t.FGetMant:
                         res, res_p = (a & 0x7F), Bit(0)
-                    elif alu == ALU_t.FAddIExp:
+                    elif alu == FP_ALU_t.FAddIExp:
                         sign = family.BitVector[16]((a & 0x8000))
                         exp = UData(a)[7:15]
                         exp_check = exp.zext(1)
@@ -244,7 +233,7 @@ def fp_unit_fc(family):
                         exp_shift = exp_shift << 7
                         mant = family.BitVector[16]((a & 0x7F))
                         res, res_p = (sign | exp_shift | mant), (exp_check > 255)
-                    elif alu == ALU_t.FSubExp:
+                    elif alu == FP_ALU_t.FSubExp:
                         signa = family.BitVector[16]((a & 0x8000))
                         expa = UData(a)[7:15]
                         signb = family.BitVector[16]((b & 0x8000))
@@ -254,9 +243,9 @@ def fp_unit_fc(family):
                         exp_shift = exp_shift << 7
                         manta = family.BitVector[16]((a & 0x7F))
                         res, res_p = ((signa | signb) | exp_shift | manta), Bit(0)
-                    elif alu == ALU_t.FCnvExp2F:
+                    elif alu == FP_ALU_t.FCnvExp2F:
                         res, res_p = to_float_result, Bit(0)
-                    elif alu == ALU_t.FGetFInt:
+                    elif alu == FP_ALU_t.FGetFInt:
                         signa = family.BitVector[16]((a & 0x8000))
                         manta = family.BitVector[16]((a & 0x7F)) | 0x80
                         expa0 = UData(a)[7:15]
@@ -275,7 +264,7 @@ def fp_unit_fc(family):
                             signed_res = SInt[16](unsigned_res)
                         # We are not checking for overflow when converting to int
                         res, res_p, V = signed_res, Bit(0), (expa0 >  family.BitVector[8](142))
-                    elif alu == ALU_t.FGetFFrac:
+                    elif alu == FP_ALU_t.FGetFFrac:
                         signa = family.BitVector[16]((a & 0x8000))
                         manta = family.BitVector[16]((a & 0x7F)) | 0x80
                         expa0 = family.BitVector[8](a[7:15])
@@ -296,16 +285,16 @@ def fp_unit_fc(family):
 
                         # We are not checking for overflow when converting to int
                         res, res_p = signed_res, Bit(0)
-                    elif alu == ALU_t.FCnvInt2F:
+                    elif alu == FP_ALU_t.FCnvInt2F:
                         res, res_p = to_float_result, Bit(0)
                     
 
-                    if (alu == ALU_t.FP_sub) | (alu == ALU_t.FP_add) | (alu == ALU_t.FP_mult) | (alu==ALU_t.FP_cmp):
+                    if (alu == FP_ALU_t.FP_sub) | (alu == FP_ALU_t.FP_add) | (alu == FP_ALU_t.FP_mult) | (alu==FP_ALU_t.FP_cmp):
                         Z = fp_is_zero(res)
                     else:
                         Z = (res == SData(0))
 
-                    if (alu == ALU_t.FP_cmp):
+                    if (alu == FP_ALU_t.FP_cmp):
                         if (a_inf & b_inf) & (a_neg == b_neg):
                             Z = Bit(1)
 

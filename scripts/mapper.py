@@ -26,13 +26,9 @@ def peak_op_bw(width):
         @family.assemble(locals(), globals())
         class Peak_Op(Peak):
 
-   
-            def __call__(self, in0:Data, in1:Data) -> Data:
-
-                # a_s = SData(a)
-                # b_s = SData(b)
-                c = in1 - in0
-                return (-c if c < 0 else c)
+            def __call__(self, in1 : Data, in0 : Data, bit_in0 : Bit) -> Data:
+    
+                return (in0 if bit_in0 == Bit(0) else in1)
             
         return Peak_Op
     return Peak_Op_fc
@@ -57,10 +53,8 @@ def test_rr():
     if solution is None: 
         print("No solution found for width = ", width)
     else:
-        for i in solution.ibinding:
-            print(i)
-        for i in solution.obinding:
-            print(i)
+        pretty_print_binding(solution.ibinding)
+        pretty_print_binding(solution.obinding) 
         counter_example = solution.verify()
 
         if counter_example is None:

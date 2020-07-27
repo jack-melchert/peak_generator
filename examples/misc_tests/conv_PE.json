@@ -1,0 +1,35 @@
+{
+    "outputs": [
+      ["alu_out", "const_out", "mul_out"]
+    ],
+    "bit_outputs": [
+      "const"
+    ],
+    "width": 16,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "const",
+        "type": "const",
+        "width": 1
+      },
+      {
+        "id": "alu_out",
+        "type": "alu",
+        "in0": "in0",
+        "in1": "in1"
+      },
+      {
+        "id": "const_out",
+        "type": "const"
+      },
+      {
+          "id": "mul_out",
+          "type": "mul",
+          "in0": "in0",
+          "in1": "in1"
+      }
+    ]
+  }
+  

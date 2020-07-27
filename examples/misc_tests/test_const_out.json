@@ -1,11 +1,11 @@
 {
     "outputs": [
-      "mux_out"
+       "const" 
     ],
     "bit_outputs": [
-      
+        
     ],
-    "width": 16,
+    "input_width": 16,
     "enable_input_regs": false,
     "enable_output_regs": false,
     "modules": [
@@ -16,12 +16,16 @@
         "in1": "in1"
       },
       {
-        "id": "mux_out",
+        "id": "const",
+        "type": "const"
+      },
+      {
+        "id": "mux",
         "type": "mux",
         "in0": "in0",
         "in1": "in1",
-        "in2": "bit_in0"
+        "in2": "in2"
       }
     ]
-  }
+}
   

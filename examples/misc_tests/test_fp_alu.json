@@ -10,7 +10,7 @@
     "modules": [
       {
         "id": "alu_out",
-        "type": "alu",
+        "type": "fp_alu",
         "in0": "aluin0",
         "in1": "aluin1"
       }
