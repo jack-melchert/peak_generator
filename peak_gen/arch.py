@@ -210,8 +210,7 @@ def read_arch(json_file_str):
                     ids.append(new_module.id)
 
                 modules.append(new_module)
-        if len(bit_inputs) == 0:
-            bit_inputs.append("bit_in_0")
+
 
         unique_inputs = sorted([entry for entry in inputs if entry not in ids])
         unique_bit_inputs = sorted([entry for entry in bit_inputs if entry not in ids])
@@ -289,13 +288,36 @@ def graph_arch(arch: Arch):
 
     mux_in0_idx = 0
     mux_in1_idx = 0
-    mux_sel_idx = 0
+    mux_in2_idx = 0
 
     for module in arch.modules:
         
         pe_subgraph.node(str(module.id), module.type_, shape='box')
                 
-        if module.type_ == "lut" or module.type_ == "mux":
+        if module.type_ == "lut":
+        
+            if len(module.in0) > 1:
+                pe_subgraph.node("mux_in0_" + str(mux_in0_idx), "mux", shape='invtrapezium')
+
+                for in0 in module.in0:
+                    pe_subgraph.edge(str(in0), "mux_in0_" + str(mux_in0_idx), style="dashed")
+
+                pe_subgraph.edge("mux_in0_" + str(mux_in0_idx),str(module.id), style="dashed")  
+                mux_in0_idx += 1
+            else:
+                pe_subgraph.edge(str(module.in0[0]), str(module.id), style="dashed")
+        
+            if len(module.in1) > 1:
+                pe_subgraph.node("mux_in1_" + str(mux_in1_idx), "mux", shape='invtrapezium')
+
+                for in1 in module.in1:
+                    pe_subgraph.edge(str(in1), "mux_in1_" + str(mux_in1_idx), style="dashed")
+
+                pe_subgraph.edge("mux_in1_" + str(mux_in1_idx),str(module.id), style="dashed")  
+                mux_in1_idx += 1
+            else:
+                pe_subgraph.edge(str(module.in1[0]), str(module.id), style="dashed")
+
             if len(module.in2) > 1:
                 pe_subgraph.node("mux_in2_" + str(mux_in2_idx), "mux", shape='invtrapezium')
 
@@ -306,28 +328,39 @@ def graph_arch(arch: Arch):
                 mux_in2_idx += 1
             else:
                 pe_subgraph.edge(str(module.in2[0]), str(module.id), style="dashed")
+        else:
+            if module.type_ == "mux":
+                if len(module.in2) > 1:
+                    pe_subgraph.node("mux_in2_" + str(mux_in2_idx), "mux", shape='invtrapezium')
+
+                    for in2 in module.in2:
+                        pe_subgraph.edge(str(in2), "mux_in2_" + str(mux_in2_idx), style="dashed")
+
+                    pe_subgraph.edge("mux_in2_" + str(mux_in2_idx),str(module.id), style="dashed")  
+                    mux_in2_idx += 1
+                else:
+                    pe_subgraph.edge(str(module.in2[0]), str(module.id), style="dashed")
+            if len(module.in0) > 1:
+                pe_subgraph.node("mux_in0_" + str(mux_in0_idx), "mux", shape='invtrapezium')
+
+                for in0 in module.in0:
+                    pe_subgraph.edge(str(in0), "mux_in0_" + str(mux_in0_idx))
+
+                pe_subgraph.edge("mux_in0_" + str(mux_in0_idx),str(module.id))  
+                mux_in0_idx += 1
+            else:
+                pe_subgraph.edge(str(module.in0[0]), str(module.id))
         
-        if len(module.in0) > 1:
-            pe_subgraph.node("mux_in0_" + str(mux_in0_idx), "mux", shape='invtrapezium')
+            if len(module.in1) > 1:
+                pe_subgraph.node("mux_in1_" + str(mux_in1_idx), "mux", shape='invtrapezium')
 
-            for in0 in module.in0:
-                pe_subgraph.edge(str(in0), "mux_in0_" + str(mux_in0_idx))
+                for in1 in module.in1:
+                    pe_subgraph.edge(str(in1), "mux_in1_" + str(mux_in1_idx))
 
-            pe_subgraph.edge("mux_in0_" + str(mux_in0_idx),str(module.id))  
-            mux_in0_idx += 1
-        else:
-            pe_subgraph.edge(str(module.in0[0]), str(module.id))
-    
-        if len(module.in1) > 1:
-            pe_subgraph.node("mux_in1_" + str(mux_in1_idx), "mux", shape='invtrapezium')
-
-            for in1 in module.in1:
-                pe_subgraph.edge(str(in1), "mux_in1_" + str(mux_in1_idx))
-
-            pe_subgraph.edge("mux_in1_" + str(mux_in1_idx),str(module.id))  
-            mux_in1_idx += 1
-        else:
-            pe_subgraph.edge(str(module.in1[0]), str(module.id))
+                pe_subgraph.edge("mux_in1_" + str(mux_in1_idx),str(module.id))  
+                mux_in1_idx += 1
+            else:
+                pe_subgraph.edge(str(module.in1[0]), str(module.id))
 
 
     mux_reg_idx = 0

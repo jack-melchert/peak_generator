@@ -44,10 +44,12 @@ def pe_arch_closure(arch):
         Inst = Inst_fc(family)
         Cond = Cond_fc(family)
 
-        DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
-        BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs))]
+        # DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
+        # BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs))]
 
-        BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs)])
+        DataInputList = Tuple[(Data if i < arch.num_inputs else Bit for i in range(arch.num_inputs + arch.num_bit_inputs))]
+
+        # BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs)])
 
         Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
         Output_Tc = family.get_constructor(Output_T)
@@ -114,7 +116,7 @@ def pe_arch_closure(arch):
             @name_outputs(pe_outputs=Output_T)
             def __call__(self, inst: Const(Inst), \
                 inputs: DataInputList, \
-                bit_inputs: BitInputList = BitInputListDefault, \
+                # bit_inputs: BitInputList = BitInputListDefault, \
                 clk_en: Global(Bit) = Bit(1)
             ) -> (Output_T):
 
@@ -125,20 +127,25 @@ def pe_arch_closure(arch):
                 signals = {}
                 bit_signals = {}
 
-                lut_res = bit_inputs[0]
+                # lut_res = bit_inputs[0]
 
                 #  Inputs with or without registers
+                input_idx = 0
                 if inline(arch.enable_input_regs):
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_inputs)):
-                        signals[arch.inputs[symbol_interpolate]] = self.input_reg_symbol_interpolate(inputs[symbol_interpolate], clk_en)
+                        signals[arch.inputs[symbol_interpolate]] = self.input_reg_symbol_interpolate(inputs[input_idx], clk_en)
+                        input_idx = input_idx + 1
                     for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
-                        bit_signals[arch.bit_inputs[symbol_interpolate]] = self.bit_input_reg_symbol_interpolate(bit_inputs[symbol_interpolate], clk_en)
+                        bit_signals[arch.bit_inputs[symbol_interpolate]] = self.bit_input_reg_symbol_interpolate(inputs[input_idx], clk_en)
+                        input_idx = input_idx + 1
                         
                 else:
                     for i in ast_tools.macros.unroll(range(arch.num_inputs)):
-                        signals[arch.inputs[i]] = inputs[i]
+                        signals[arch.inputs[input_idx]] = inputs[input_idx]
+                        input_idx = input_idx + 1
                     for i in ast_tools.macros.unroll(range(arch.num_bit_inputs)):
-                        bit_signals[arch.bit_inputs[i]] = bit_inputs[i]
+                        bit_signals[arch.bit_inputs[i]] = inputs[input_idx]
+                        input_idx = input_idx + 1
                         
                 # Constant inputs
                 for i in ast_tools.macros.unroll(range(arch.num_const_inputs)):
@@ -331,16 +338,7 @@ def pe_arch_closure(arch):
                     outputs = outputs + bit_outputs
                     return Output_Tc(*outputs)
 
-
-      
-                
-            num_fp = 0
-            for m in ast_tools.macros.unroll(range(len(arch.modules))):
-                if arch.modules[m].type_ == 'alu':
-                    if arch.modules[m].in_width == 16:
-                        num_fp += 1
-
-            fp_vals = Tuple[(fp_val for _ in range(num_fp))]
+            fp_vals = Tuple[(fp_val for _ in range(arch.num_fp_alu))]
 
             # print(inspect.getsource(__init__)) 
             # print(inspect.getsource(__call__)) 
@@ -361,19 +359,16 @@ def pe_arch_closure(arch):
     return PE_fc
 
 
-def wrapped_pe_arch_closure(arch):
+def fp_pe_arch_closure(arch):
     
     @family_closure
-    def Wrapped_PE_fc(family: AbstractFamily):
+    def FP_PE_fc(family: AbstractFamily):
         BitVector = family.BitVector
         Data = family.BitVector[arch.input_width]
         Out_Data = family.BitVector[arch.output_width]
         Bit = family.Bit
 
-        DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
-        BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs))]
-
-        BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs)])
+        DataInputList = Tuple[(Data if i < arch.num_inputs else Bit for i in range(arch.num_inputs + arch.num_bit_inputs))]
 
         Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
         Output_Tc = family.get_constructor(Output_T)
@@ -391,25 +386,23 @@ def wrapped_pe_arch_closure(arch):
 
         PE = pe_arch_closure(arch)(family)
 
-
-
         fp_vals_t = Tuple[(fp_val for _ in range(arch.num_fp_alu))]
         
         @family.assemble(locals(), globals())
-        class Wrapped_PE(Peak):
+        class FP_PE(Peak):
             def __init__(self):
                 self.pe : PE = PE()
 
             @name_outputs(pe_outputs=Output_T)
             def __call__(self, fp_vals : fp_vals_t, inst : Const(Inst), inputs: DataInputList, \
-                    bit_inputs: BitInputList = BitInputListDefault, \
+                    # bit_inputs: BitInputList = BitInputListDefault, \
                     clk_en: Global(Bit) = Bit(1)) -> Output_T:
 
 
                 self.pe._set_fp(fp_vals)
-                return self.pe(inst, inputs, bit_inputs, clk_en)
+                return self.pe(inst, inputs, clk_en)
 
-        return Wrapped_PE
-    return Wrapped_PE_fc
+        return FP_PE
+    return FP_PE_fc
 
     
