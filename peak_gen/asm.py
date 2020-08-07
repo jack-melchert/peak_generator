@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from .isa import inst_arch_closure
 from .isa import ALU_t
+from .isa import FP_ALU_t
 from .isa import MUL_t
 from .isa import Signed_t
 from .cond import Cond_t
@@ -114,8 +115,8 @@ def asm_arch_closure(arch):
     return asm_fc
 
 # def lut(arch, val):
-#     Cond_default = [Cond_t.LUT for _ in range(arch.num_alu + arch.num_add)]
-#     return asm_arch_closure(arch)(family.PyFamily())(lut=val, cond=Cond_default)
+#     Cond_default = [Cond_t.LUT for _ in range(arch.num_lut)]
+#     return asm_arch_closure(arch).Py()(lut=val, cond=Cond_default)
 
 # #Using bit1 and bit2 since bit0 can be used in the ALU
 # def lut_and(arch):

@@ -32,8 +32,8 @@ def test_lut_binary(op):
         b1 = config_data_bits[1]
         b2 = config_data_bits[2]
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
-        bit_input_data = [b0, b1, b2]
-        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data), bit_inputs = BitInputList(*bit_input_data))
+        input_data += [b0, b1, b2]
+        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data))
         assert res_p==op.func(b1,b2) #Testing from bit1 and bit2 port
 
 @pytest.mark.parametrize("op", [
@@ -48,8 +48,8 @@ def test_lut_unary(op):
         b1 = config_data_bits[1]
         b2 = config_data_bits[2]
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
-        bit_input_data = [b0, b1, b2]
-        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data), bit_inputs = BitInputList(*bit_input_data))
+        input_data += [b0, b1, b2]
+        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data))
         assert res_p==op.func(b1)
 
 @pytest.mark.parametrize("op", [
@@ -67,8 +67,8 @@ def test_lut_ternary(op):
 
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
 
-        bit_input_data = [d0, d1, sel]
-        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data), bit_inputs = BitInputList(*bit_input_data))
+        input_data += [b0, b1, b2]
+        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data))
         assert res_p==op.func(sel,d0,d1)
 
 def test_lut():
@@ -82,8 +82,8 @@ def test_lut():
         b1 = config_data_bits[1]
         b2 = config_data_bits[2]
         input_data = [UIntVector.random(arch.input_width) for _ in range(arch.num_inputs)]
-        bit_input_data = [b0, b1, b2]
-        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data), bit_inputs = BitInputList(*bit_input_data))
+        input_data += [b0, b1, b2]
+        _, res_p  = pe(inst = inst, inputs = DataInputList(*input_data))
         assert res_p== lut_val[int(BitVector[3]([b0,b1,b2]))]
 
 # test_lut()
