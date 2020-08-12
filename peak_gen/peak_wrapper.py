@@ -177,7 +177,7 @@ def PE_wrapped_fc(family: AbstractFamily):
     
     return PE_wrapped
 '''
-    # print(new_peak_class)
+    # print(new_peak_class) 
     _globals = dict(
         Peak=Peak,
         AbstractFamily=AbstractFamily,

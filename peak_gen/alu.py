@@ -76,9 +76,10 @@ def ALU_fc(family : AbstractFamily):
                     res, res_p = abs_pred.ite(a, UData(-SInt[width](a))), Bit(a[-1])
                 elif alu == ALU_t.Absd:
 
-                    temp, C = SData(a).adc(SData(b), Cin)
-                    temp_abs = SData(temp) <= SData(0)
-                    res, res_p = temp_abs.ite(UData(-SData(temp)), UData(SData(temp))), Bit(0)
+                    temp, C = UData(a).adc(UData(b), Cin)
+                    temp_abs = SData(temp) < SData(0)
+                    res, res_p = temp_abs.ite(Data(-SData(temp)), Data(SData(temp))), Bit(0)
+
                 elif alu == ALU_t.And:
                     res, res_p = a & b, Bit(0)
                 elif alu == ALU_t.Or:
