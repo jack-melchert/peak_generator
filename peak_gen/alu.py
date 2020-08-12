@@ -50,12 +50,12 @@ def ALU_fc(family : AbstractFamily):
                 res_p = Bit(0)
 
                 Cin = Bit(0)
-                if (alu == ALU_t.Sub):
+                if (alu == ALU_t.Sub) | (alu == ALU_t.Absd):
                     b = ~b
 
                 if (alu == ALU_t.Add):
                     Cin = Bit(0)  
-                elif (alu == ALU_t.Sub):
+                elif (alu == ALU_t.Sub) | (alu == ALU_t.Absd):
                     Cin = Bit(1)
 
                 C = Bit(0)
@@ -74,8 +74,12 @@ def ALU_fc(family : AbstractFamily):
                     res, res_p = lte_pred.ite(a, b), lte_pred
                 elif alu == ALU_t.Abs:
                     res, res_p = abs_pred.ite(a, UData(-SInt[width](a))), Bit(a[-1])
-                # elif alu == ALU_t.Sel:
-                #     res, res_p = d.ite(a, b), Bit(0)
+                elif alu == ALU_t.Absd:
+
+                    temp, C = UData(a).adc(UData(b), Cin)
+                    temp_abs = SData(temp) < SData(0)
+                    res, res_p = temp_abs.ite(Data(-SData(temp)), Data(SData(temp))), Bit(0)
+
                 elif alu == ALU_t.And:
                     res, res_p = a & b, Bit(0)
                 elif alu == ALU_t.Or:

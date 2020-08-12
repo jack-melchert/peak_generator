@@ -21,6 +21,7 @@ class ALU_t(Enum):
     Or = Enum.Auto()
     And = Enum.Auto()
     XOr = Enum.Auto()
+    Absd = Enum.Auto()
 
 class FP_ALU_t(Enum):
     FP_add = Enum.Auto()

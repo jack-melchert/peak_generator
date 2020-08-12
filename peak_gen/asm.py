@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from .isa import inst_arch_closure
 from .isa import ALU_t
+from .isa import FP_ALU_t
 from .isa import MUL_t
 from .isa import Signed_t
 from .cond import Cond_t
@@ -21,6 +22,7 @@ def asm_arch_closure(arch):
         Inst_fc = inst_arch_closure(arch)
         Inst = Inst_fc(family)
         Data = family.BitVector[arch.input_width]
+        Bit = family.Bit
 
         if arch.num_alu > 0:
             ALU_t_list_type = Inst.alu
@@ -43,11 +45,17 @@ def asm_arch_closure(arch):
         if arch.num_mux_in1 > 0:
             mux_list_type_in1 = Inst.mux_in1
 
+        if arch.num_mux_in2 > 0:
+            mux_list_type_in2 = Inst.mux_in2
+
         if arch.num_reg_mux > 0:
             mux_list_type_reg = Inst.mux_reg
 
         if arch.num_output_mux > 0:
             mux_list_type_output = Inst.mux_out
+
+        if arch.num_bit_output_mux > 0:
+            mux_list_type_bit_output = Inst.mux_bit_out
 
         if arch.num_lut > 0:
             LUT_t_list_type = Inst.lut
@@ -59,17 +67,20 @@ def asm_arch_closure(arch):
         FP_ALU_default = [FP_ALU_t.FP_add for _ in range(arch.num_fp_alu)]
         Cond_default = [Cond_t.Z for _ in range(arch.num_alu + arch.num_add)]
         MUL_default = [MUL_t.Mult0 for _ in range(arch.num_mul)]
-        Const_default = [Data(0) for _ in range(arch.num_const_inputs)]
+        Const_default = [Bit(0) if arch.const_inputs[i].width == 1 else Data(0) for i in range(arch.num_const_inputs)]
         LUT_default = [family.BitVector[8](0) for _ in range(arch.num_lut)]
-        mux_in0_default = [family.BitVector[1](0) for _ in range(arch.num_mux_in0)]
-        mux_in1_default = [family.BitVector[1](0) for _ in range(arch.num_mux_in1)]
-        mux_reg_default = [family.BitVector[1](0) for _ in range(arch.num_reg_mux)]
-        mux_out_default = [family.BitVector[1](0) for _ in range(arch.num_output_mux)]
         signed_default = [Signed_t.unsigned for _ in range(arch.num_alu + arch.num_fp_alu + arch.num_mul)]
+
+        mux_in0_default = [family.BitVector[m.math.log2_ceil(len(arch.modules[i].in0))](0) for i in range(len(arch.modules)) if len(arch.modules[i].in0) > 1]
+        mux_in1_default = [family.BitVector[m.math.log2_ceil(len(arch.modules[i].in1))](0) for i in range(len(arch.modules)) if len(arch.modules[i].in1) > 1]
+        mux_in2_default = [family.BitVector[m.math.log2_ceil(len(arch.modules[i].in2))](0) for i in range(len(arch.modules)) if len(arch.modules[i].in2) > 1]
+        mux_reg_default = [family.BitVector[m.math.log2_ceil(len(arch.regs[i].in_))](0) for i in range(len(arch.regs)) if len(arch.regs[i].in_) > 1]
+        mux_out_default = [family.BitVector[m.math.log2_ceil(len(arch.outputs[i]))](0) for i in range(arch.num_outputs) if len(arch.outputs[i]) > 1]
+        mux_bit_out_default = [family.BitVector[m.math.log2_ceil(len(arch.bit_outputs[i]))](0) for i in range(arch.num_bit_outputs) if len(arch.bit_outputs[i]) > 1]
 
 
         def gen_inst(alu = ALU_default, fp_alu=FP_ALU_default, cond=Cond_default, mul = MUL_default, const = Const_default, mux_in0 = mux_in0_default, \
-        mux_in1 = mux_in1_default, mux_reg = mux_reg_default, mux_out = mux_out_default, \
+        mux_in1 = mux_in1_default, mux_in2 = mux_in2_default, mux_reg = mux_reg_default, mux_out = mux_out_default, mux_bit_out = mux_bit_out_default,\
         signed=signed_default, lut=LUT_default):
 
             args = []
@@ -95,11 +106,17 @@ def asm_arch_closure(arch):
             if arch.num_mux_in1 > 0:
                 args.append(mux_list_type_in1(*mux_in1) )
 
+            if arch.num_mux_in2 > 0:
+                args.append(mux_list_type_in2(*mux_in2) )
+
             if arch.num_reg_mux > 0:
                 args.append(mux_list_type_reg(*mux_reg) )
 
             if arch.num_output_mux > 0:
                 args.append(mux_list_type_output(*mux_out) )
+
+            if arch.num_bit_output_mux > 0:
+                args.append(mux_list_type_bit_output(*mux_bit_out) )
 
             if arch.num_alu + arch.num_mul + arch.num_fp_alu:
                 args.append(Signed_list_type(*signed))
@@ -113,22 +130,3 @@ def asm_arch_closure(arch):
         return gen_inst
     return asm_fc
 
-# def lut(arch, val):
-#     Cond_default = [Cond_t.LUT for _ in range(arch.num_alu + arch.num_add)]
-#     return asm_arch_closure(arch)(family.PyFamily())(lut=val, cond=Cond_default)
-
-# #Using bit1 and bit2 since bit0 can be used in the ALU
-# def lut_and(arch):
-#     return lut(arch, B1&B2)
-
-# def lut_or(arch):
-#     return lut(arch, B1|B2)
-
-# def lut_xor(arch):
-#     return lut(arch, B1^B2)
-
-# def lut_not(arch):
-#     return lut(arch, ~B1)
-
-# def lut_mux(arch):
-#     return lut(arch, (B2&B1)|((~B2)&B0))
