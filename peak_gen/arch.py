@@ -1,7 +1,10 @@
 import json
 
 class Arch():
-    def __init__(self, input_width, output_width, num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_fp_alu, num_mul, num_add, num_lut, num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_mux_in2, num_reg_mux, num_output_mux, num_bit_output_mux, inputs, bit_inputs, outputs, bit_outputs, enable_input_regs, enable_output_regs):
+    def __init__(self, input_width, output_width, num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_bit_alu, \
+        num_fp_alu, num_mul, num_add, num_sub, num_abs, num_gte, num_lte, num_shr, num_shl, num_absd, num_lut, num_reg, num_mux, \
+            num_const_inputs, num_mux_in0, num_mux_in1, num_mux_in2, num_reg_mux, \
+            num_output_mux, num_bit_output_mux, inputs, bit_inputs, outputs, bit_outputs, enable_input_regs, enable_output_regs):
         self.input_width = input_width
         self.output_width = output_width
         self.num_inputs = num_inputs
@@ -9,9 +12,17 @@ class Arch():
         self.num_outputs = num_outputs
         self.num_bit_outputs = num_bit_outputs
         self.num_alu = num_alu
+        self.num_bit_alu = num_bit_alu
         self.num_fp_alu = num_fp_alu
         self.num_mul = num_mul
         self.num_add = num_add
+        self.num_sub = num_sub 
+        self.num_abs = num_abs 
+        self.num_gte = num_gte 
+        self.num_lte = num_lte 
+        self.num_shr = num_shr 
+        self.num_shl = num_shl 
+        self.num_absd = num_absd 
         self.num_lut = num_lut
         self.num_reg = num_reg
         self.num_mux = num_mux
@@ -68,8 +79,16 @@ def read_arch(json_file_str):
     with open(json_file_str) as json_file:
         json_in = json.loads(json_file.read())
         num_alu = 0
+        num_bit_alu = 0
         num_fp_alu = 0
         num_add = 0
+        num_sub = 0
+        num_abs = 0
+        num_gte = 0
+        num_lte = 0
+        num_shr = 0
+        num_shl = 0
+        num_absd = 0
         num_lut = 0
         num_mul = 0
         num_reg = 0
@@ -168,6 +187,8 @@ def read_arch(json_file_str):
                 
                 if new_module.type_ == "alu":
                     num_alu += 1
+                elif new_module.type_ == "bit_alu":
+                    num_bit_alu += 1
                 elif new_module.type_ == "fp_alu":
                     num_fp_alu += 1
                 elif new_module.type_ == "mul":
@@ -176,8 +197,22 @@ def read_arch(json_file_str):
                     num_mux += 1
                 elif new_module.type_ == "add":
                     num_add += 1
+                elif new_module.type_ == "sub":
+                    num_sub += 1
+                elif new_module.type_ == "abs":
+                    num_abs += 1
+                elif new_module.type_ == "gte":
+                    num_gte += 1
+                elif new_module.type_ == "lte":
+                    num_lte += 1
+                elif new_module.type_ == "shr":
+                    num_shr += 1
+                elif new_module.type_ == "shl":
+                    num_shl += 1
+                elif new_module.type_ == "absd":
+                    num_absd += 1
                 else:
-                    raise ValueError('Unrecognized module type in specification')
+                    raise ValueError(f'Unrecognized module type in specification: {new_module.type_}')
 
                 if not isinstance(new_module.in0, list):
                     new_module.in0 = [new_module.in0]
@@ -258,8 +293,8 @@ def read_arch(json_file_str):
 
             bit_outputs.append(out_new)
 
-        arch = Arch(width, json_in.get('output_width', width), num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_fp_alu, num_mul, num_add, num_lut,
-                    num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_mux_in2, num_reg_mux, num_output_mux, num_bit_output_mux, unique_inputs, unique_bit_inputs, outputs, bit_outputs, 
+        arch = Arch(width, json_in.get('output_width', width), num_inputs, num_bit_inputs, num_outputs, num_bit_outputs, num_alu, num_bit_alu, num_fp_alu, num_mul, num_add, num_sub, num_abs, num_gte, num_lte, 
+                    num_shr, num_shl, num_absd, num_lut, num_reg, num_mux, num_const_inputs, num_mux_in0, num_mux_in1, num_mux_in2, num_reg_mux, num_output_mux, num_bit_output_mux, unique_inputs, unique_bit_inputs, outputs, bit_outputs, 
                     json_in.get('enable_input_regs', False), json_in.get('enable_output_regs', False))
         arch.modules = modules
         arch.regs = regs
