@@ -23,6 +23,11 @@ class ALU_t(Enum):
     XOr = Enum.Auto()
     Absd = Enum.Auto()
 
+class BIT_ALU_t(Enum):
+    Or = Enum.Auto()
+    And = Enum.Auto()
+    XOr = Enum.Auto()
+
 class FP_ALU_t(Enum):
     FP_add = Enum.Auto()
     FP_sub = Enum.Auto()
@@ -50,11 +55,12 @@ def inst_arch_closure(arch):
         LUT_t, _ = LUT_t_fc(family)
 
         ALU_t_list_type = Tuple[(ALU_t for _ in range(arch.num_alu))]
+        BIT_ALU_t_list_type = Tuple[(BIT_ALU_t for _ in range(arch.num_bit_alu))]
         FP_ALU_t_list_type = Tuple[(FP_ALU_t for _ in range(arch.num_fp_alu))]
-        Cond_t_list_type = Tuple[(Cond_t for _ in range(arch.num_alu + arch.num_add + arch.num_fp_alu))]
+        Cond_t_list_type = Tuple[(Cond_t for _ in range(arch.num_alu + arch.num_fp_alu + arch.num_sub + arch.num_gte + arch.num_lte))]
         MUL_t_list_type = Tuple[(MUL_t for _ in range(arch.num_mul))]
         Const_data_list_type = Tuple[(Bit if arch.const_inputs[i].width == 1 else Data for i in range(arch.num_const_inputs))]
-        Signed_list_type = Tuple[(Signed_t for _ in range(arch.num_alu + arch.num_mul + arch.num_fp_alu))]
+        Signed_list_type = Tuple[(Signed_t for _ in range(arch.num_alu + arch.num_mul + arch.num_fp_alu + arch.num_gte + arch.num_lte + arch.num_shr))]
         LUT_list_type = Tuple[(LUT_t for _ in range(arch.num_lut))]
         mux_list_type_in0 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in0))] for i in range(len(arch.modules)) if len(arch.modules[i].in0) > 1)]
         mux_list_type_in1 = Tuple[(family.BitVector[m.math.log2_ceil(len(arch.modules[i].in1))] for i in range(len(arch.modules)) if len(arch.modules[i].in1) > 1)]
@@ -69,10 +75,13 @@ def inst_arch_closure(arch):
             if arch.num_alu > 0:
                 alu = ALU_t_list_type
 
+            if arch.num_bit_alu > 0:
+                bit_alu = BIT_ALU_t_list_type
+
             if arch.num_fp_alu > 0:
                 fp_alu = FP_ALU_t_list_type
             
-            if arch.num_alu + arch.num_add + arch.num_fp_alu > 0:
+            if arch.num_alu + arch.num_fp_alu + arch.num_sub + arch.num_gte + arch.num_lte > 0:
                 cond = Cond_t_list_type  
                 
             if arch.num_mul > 0:
@@ -99,7 +108,7 @@ def inst_arch_closure(arch):
             if arch.num_bit_output_mux > 0:
                 mux_bit_out = mux_list_type_bit_output
 
-            if arch.num_alu + arch.num_mul + arch.num_fp_alu > 0:
+            if arch.num_alu + arch.num_mul + arch.num_fp_alu + arch.num_gte + arch.num_lte + arch.num_shr > 0:
                 signed = Signed_list_type     # unsigned or signed
 
             if arch.num_lut > 0:

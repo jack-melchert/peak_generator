@@ -4,7 +4,7 @@ import inspect
 import os
 import logging
 
-from peak import Peak, family_closure, name_outputs
+from peak import Peak, family_closure, name_outputs, Const
 from peak import family
 from peak.family import AbstractFamily
 from hwtypes import Tuple
@@ -56,7 +56,7 @@ def wrapped_peak_class(arch, fp=False):
         new_inputs_str = "fp_vals : fp_vals_t, inst : Inst, "
         pe_call_inputs = "fp_vals, inst, "
     else:
-        new_inputs_str = "inst : Inst, "
+        new_inputs_str = "inst : Const(Inst), "
         pe_call_inputs = "inst, "
 
     tuple_inputs_str = ""
@@ -187,7 +187,8 @@ def PE_wrapped_fc(family: AbstractFamily):
         Inst_fc=Inst_fc,
         # Inst=Inst,
         PE_fc=PE_fc,
-        Tuple=Tuple
+        Tuple=Tuple,
+        Const=Const
     )
 
     return exec_source(new_peak_class, "PE_wrapped_fc", _globals)

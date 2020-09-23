@@ -7,7 +7,7 @@ from peak.mapper import ArchMapper
 from peak.mapper.utils import pretty_print_binding
 from hwtypes import BitVector, Tuple, Bit
 import sys
-import time
+from timeit import default_timer as timer
 from peak import family
 from peak.family import AbstractFamily
 from peak.mapper import RewriteRule
@@ -16,7 +16,8 @@ from peak.assembler.assembler import Assembler
 import pdb
 import json
 import copy 
-
+# from lassen.sim import PE_fc
+# from metamapper.irs.coreir.ir import gen_peak_CoreIR
 
 def peak_op_bw(width):
     @family_closure
@@ -27,9 +28,9 @@ def peak_op_bw(width):
         @family.assemble(locals(), globals())
         class Peak_Op(Peak):
 
-            def __call__(self, in0 : Data, in1 : Data) -> Data:
+            def __call__(self, in1 : Data, in2 : Data, in3 : Data, in4 : Data, in5 : Data, in0 : Data) -> Data:
                 
-                return in0 + in1
+                return Data(in5 + Data(in4 + Data(in3 + Data(in2 + Data(in0 + in1)))))
             
         return Peak_Op
     return Peak_Op_fc
@@ -43,20 +44,19 @@ def test_rr():
 
     arch_mapper = ArchMapper(PE_fc)
 
-    tic = time.perf_counter()
-    
+
     ir_fc = peak_op_bw(width)
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('z3', external_loop=True)
-    
-    toc = time.perf_counter()
-    print(f"{toc - tic:0.4f} seconds")
+
+
+    solution = ir_mapper.solve('btor', external_loop=True)
+
 
     if solution is None: 
         print("No solution found for width = ", width)
     else:
-        pretty_print_binding(solution.ibinding)
-        pretty_print_binding(solution.obinding) 
+        # pretty_print_binding(solution.ibinding)
+        # pretty_print_binding(solution.obinding) 
         counter_example = solution.verify()
 
         if counter_example is None:

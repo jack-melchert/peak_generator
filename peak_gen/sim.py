@@ -10,8 +10,17 @@ import inspect
 from .common import *
 from .lut import LUT_fc
 from .alu import ALU_fc
+from .bitwise_alu import BIT_ALU_fc
 from .fp_alu import FP_ALU_fc, fp_unit_fc
 from .add import ADD_fc
+from .sub import SUB_fc
+from .abs import ABS_fc
+from .gte import GTE_fc
+from .lte import LTE_fc
+from .shr import SHR_fc
+from .shl import SHL_fc
+from .absd import ABSD_fc
+
 from .cond import Cond_fc
 from .isa import inst_arch_closure
 from .arch import *
@@ -34,9 +43,20 @@ def pe_arch_closure(arch):
         Bit_Register = gen_register(Bit, 0)(family)
 
         ALU_bw = ALU_fc(family)
+        BIT_ALU_bw = BIT_ALU_fc(family)
+
         FP_ALU_bw = FP_ALU_fc(family)
         fp_unit_bw = fp_unit_fc(family)
+
         ADD_bw = ADD_fc(family)
+        SUB_bw = SUB_fc(family)
+        ABS_bw = ABS_fc(family)
+        GTE_bw = GTE_fc(family)
+        LTE_bw = LTE_fc(family)
+        SHR_bw = SHR_fc(family)
+        SHL_bw = SHL_fc(family)
+        ABSD_bw = ABSD_fc(family)
+
         LUT = LUT_fc(family)
         MUL_bw = MUL_fc(family)
         MUX_bw = MUX_fc(family)
@@ -93,14 +113,40 @@ def pe_arch_closure(arch):
                     if inline(arch.modules[symbol_interpolate].type_ == 'alu'):
                         self.modules_symbol_interpolate: type(ALU_bw(arch.modules[symbol_interpolate].in_width)) = ALU_bw(arch.modules[symbol_interpolate].in_width)()
                         self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'bit_alu'):
+                        self.modules_symbol_interpolate: type(BIT_ALU_bw(arch.modules[symbol_interpolate].in_width)) = BIT_ALU_bw(arch.modules[symbol_interpolate].in_width)()
+
                     if inline(arch.modules[symbol_interpolate].type_ == 'fp_alu'):
                         self.modules_symbol_interpolate: type(FP_ALU_bw(arch.modules[symbol_interpolate].in_width)) = FP_ALU_bw(arch.modules[symbol_interpolate].in_width)()
                         self.cond_symbol_interpolate: Cond = Cond()
                     if inline(arch.modules[symbol_interpolate].type_ == 'mul'):
                         self.modules_symbol_interpolate: type(MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)) = MUL_bw(arch.modules[symbol_interpolate].in_width, arch.modules[symbol_interpolate].out_width)()
+
                     if inline(arch.modules[symbol_interpolate].type_ == 'add'):
-                        self.modules_symbol_interpolate: type(ALU_bw(arch.input_width)) = ADD_bw(arch.input_width)()
+                        self.modules_symbol_interpolate: type(ADD_bw(arch.input_width)) = ADD_bw(arch.input_width)()
+                        # self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'sub'):
+                        self.modules_symbol_interpolate: type(SUB_bw(arch.input_width)) = SUB_bw(arch.input_width)()
                         self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'abs'):
+                        self.modules_symbol_interpolate: type(ABS_bw(arch.input_width)) = ABS_bw(arch.input_width)()
+                        # self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'gte'):
+                        self.modules_symbol_interpolate: type(GTE_bw(arch.input_width)) = GTE_bw(arch.input_width)()
+                        self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'lte'):
+                        self.modules_symbol_interpolate: type(LTE_bw(arch.input_width)) = LTE_bw(arch.input_width)()
+                        self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'shr'):
+                        self.modules_symbol_interpolate: type(SHR_bw(arch.input_width)) = SHR_bw(arch.input_width)()
+                        # self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'shl'):
+                        self.modules_symbol_interpolate: type(SHL_bw(arch.input_width)) = SHL_bw(arch.input_width)()
+                        # self.cond_symbol_interpolate: Cond = Cond()
+                    if inline(arch.modules[symbol_interpolate].type_ == 'absd'):
+                        self.modules_symbol_interpolate: type(ABSD_bw(arch.input_width)) = ABSD_bw(arch.input_width)()
+                        # self.cond_symbol_interpolate: Cond = Cond()
+
                     if inline(arch.modules[symbol_interpolate].type_ == 'mux'):
                         self.modules_symbol_interpolate: type(MUX_bw(arch.input_width)) = MUX_bw(arch.input_width)()
                     if inline(arch.modules[symbol_interpolate].type_ == 'lut'):
@@ -165,6 +211,7 @@ def pe_arch_closure(arch):
                 signed_idx = 0
                 mul_idx = 0
                 alu_idx = 0
+                bit_alu_idx = 0
                 fp_alu_idx = 0
                 lut_idx = 0
                 cond_idx = 0
@@ -242,6 +289,10 @@ def pe_arch_closure(arch):
                             cond_idx = cond_idx + 1
                             signed_idx = signed_idx + 1
                             alu_idx = alu_idx + 1
+                        elif inline(arch.modules[symbol_interpolate].type_ == "bit_alu"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.bit_alu[bit_alu_idx], in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
+                            bit_alu_idx = bit_alu_idx + 1
 
                         elif inline(arch.modules[symbol_interpolate].type_ == "fp_alu"):
                             signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.fp_alu[fp_alu_idx], inst.signed[signed_idx], in0, in1)
@@ -252,9 +303,34 @@ def pe_arch_closure(arch):
 
                         elif inline(arch.modules[symbol_interpolate].type_ == "add"):
                             signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
+                        elif inline(arch.modules[symbol_interpolate].type_ == "sub"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
                             bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, Z, N, C, V)
-                            # res_p = bit_signals[arch.modules[symbol_interpolate].id]
                             cond_idx = cond_idx + 1
+                        elif inline(arch.modules[symbol_interpolate].type_ == "abs"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
+                        elif inline(arch.modules[symbol_interpolate].type_ == "gte"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.signed[signed_idx], in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, Z, N, C, V)
+                            cond_idx = cond_idx + 1
+                            signed_idx = signed_idx + 1
+                        elif inline(arch.modules[symbol_interpolate].type_ == "lte"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.signed[signed_idx], in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = self.cond_symbol_interpolate(inst.cond[cond_idx], alu_res_p, Z, N, C, V)
+                            cond_idx = cond_idx + 1
+                            signed_idx = signed_idx + 1
+                        elif inline(arch.modules[symbol_interpolate].type_ == "shr"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(inst.signed[signed_idx], in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
+                            signed_idx = signed_idx + 1
+                        elif inline(arch.modules[symbol_interpolate].type_ == "shl"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
+                        elif inline(arch.modules[symbol_interpolate].type_ == "absd"):
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules_symbol_interpolate(in0, in1)
+                            bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
 
                         elif inline(arch.modules[symbol_interpolate].type_ == "mux"):
 
