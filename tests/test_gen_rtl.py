@@ -6,6 +6,7 @@ import sys
 import pdb
 import pytest
 import glob, os
+import shutil
 
 
 @pytest.mark.parametrize("arch_file", glob.glob('examples/**/*.json', recursive=True))
@@ -14,7 +15,8 @@ def test_gen_rtl(arch_file):
     PE_fc = pe_arch_closure(arch)
     PE = PE_fc(family.MagmaFamily())
 
-    if not os.path.exists('tests/build'):
-        os.makedirs('tests/build')
+    if os.path.exists('tests/build'):
+        shutil.rmtree('tests/build')
+    os.makedirs('tests/build')
 
     m.compile(f"tests/build/PE", PE, output="coreir-verilog")
