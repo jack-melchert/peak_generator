@@ -24,7 +24,7 @@ def test_add():
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
     
-    inputs = [BitVector.random(16),BitVector.random(16)]
+    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
 
     res_comp = inputs[0] + inputs[1]
 
@@ -41,7 +41,7 @@ def test_mul():
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
 
-    inputs = [BitVector.random(16),BitVector.random(16)]
+    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
 
     res_comp = inputs[0] * inputs[1]
 
@@ -55,7 +55,7 @@ def test_alu():
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
 
-    inputs = [BitVector.random(16),BitVector.random(16)]
+    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
 
     res_comp = inputs[0] + inputs[1]
     res_pe_bv = PE_bv(inst_gen(alu=[ALU_t.Add]), inputs)
@@ -75,7 +75,7 @@ def test_mux():
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
 
-    inputs = [BitVector.random(16),BitVector.random(16)]
+    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
 
     res_comp = inputs[0] * inputs[1]
     res_pe_bv = PE_bv(inst_gen(mux_out=[BitVector[1](1)]), inputs)
