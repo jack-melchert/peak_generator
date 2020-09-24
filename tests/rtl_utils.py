@@ -9,7 +9,7 @@ from peak_gen.arch import read_arch
 from peak_gen.peak_wrapper import wrapped_peak_class
 from hwtypes import Bit, BitVector, Tuple
 import os
-
+from peak_gen import CoreIRContext
 class HashableDict(dict):
     def __hash__(self):
         return hash(tuple(sorted(self.keys())))
@@ -22,8 +22,8 @@ def copy_file(src_filename, dst_filename, override=False):
 
 
 def rtl_tester(arch, inst, input_data, res_comp, num_sim_cycles = 1):
-
-    shutil.rmtree("tests/build")
+    CoreIRContext(reset=True)
+    # shutil.rmtree("tests/build")
 
     PE_fc = wrapped_peak_class(arch)
     PE_bv = PE_fc.Py()
@@ -43,7 +43,7 @@ def rtl_tester(arch, inst, input_data, res_comp, num_sim_cycles = 1):
                                             HashableDict(layout),
                                             instr_magma_type)
     test_dir = "tests/build"
-    magma.backend.coreir_.CoreIRContextSingleton().reset_instance()
+    # magma.backend.coreir_.CoreIRContextSingleton().reset_instance()
     # magma.compile(f"{test_dir}/WrappedPE", pe_circuit, output="coreir-verilog")
     tester = fault.Tester(pe_circuit, clock=pe_circuit.CLK)
 
