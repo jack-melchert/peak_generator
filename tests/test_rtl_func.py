@@ -33,7 +33,7 @@ def test_add():
     assert res_comp == res_pe_bv[0].value
     rtl_tester(arch, inst_gen(), inputs, res_comp)
 
-
+@pytest.mark.skip()
 def test_mul():
     CoreIRContext(reset=True)
     arch = read_arch("examples/misc_tests/test_mul.json")
@@ -49,6 +49,7 @@ def test_mul():
     assert res_comp == res_pe_bv[0].value
     rtl_tester(arch, inst_gen(), inputs, res_comp)
 
+@pytest.mark.skip()
 def test_alu():
     CoreIRContext(reset=True)
     arch = read_arch("examples/misc_tests/test_alu.json")
@@ -69,7 +70,7 @@ def test_alu():
     rtl_tester(arch, inst_gen(alu=[ALU_t.Sub]), inputs, res_comp)
 
 
-
+@pytest.mark.skip()
 def test_mux():
     CoreIRContext(reset=True)
     arch = read_arch("examples/misc_tests/lassen.json")
