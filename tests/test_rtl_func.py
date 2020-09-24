@@ -18,13 +18,13 @@ from peak_gen import CoreIRContext
 
 
 def test_add():
-    # CoreIRContext(reset=True)
+    CoreIRContext(reset=True)
     arch = read_arch("examples/misc_tests/test_add.json")
     PE_fc = pe_arch_closure(arch)
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
     
-    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
+    inputs = [BitVector[16](42),BitVector[16](42)]
 
     res_comp = inputs[0] + inputs[1]
 
@@ -35,13 +35,13 @@ def test_add():
 
 
 def test_mul():
-    # CoreIRContext(reset=True)
+    CoreIRContext(reset=True)
     arch = read_arch("examples/misc_tests/test_mul.json")
     PE_fc = pe_arch_closure(arch)
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
 
-    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
+    inputs = [BitVector[16](42),BitVector[16](42)]
 
     res_comp = inputs[0] * inputs[1]
 
@@ -50,12 +50,13 @@ def test_mul():
     rtl_tester(arch, inst_gen(), inputs, res_comp)
 
 def test_alu():
+    CoreIRContext(reset=True)
     arch = read_arch("examples/misc_tests/test_alu.json")
     PE_fc = pe_arch_closure(arch)
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
 
-    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
+    inputs = [BitVector[16](42),BitVector[16](42)]
 
     res_comp = inputs[0] + inputs[1]
     res_pe_bv = PE_bv(inst_gen(alu=[ALU_t.Add]), inputs)
@@ -70,12 +71,13 @@ def test_alu():
 
 
 def test_mux():
+    CoreIRContext(reset=True)
     arch = read_arch("examples/misc_tests/lassen.json")
     PE_fc = pe_arch_closure(arch)
     inst_gen = asm_arch_closure(arch)(family.PyFamily())
     PE_bv = PE_fc.Py()
 
-    inputs = [BitVector.random(16)<<8,BitVector.random(16)<<8]
+    inputs = [BitVector[16](42),BitVector[16](42)]
 
     res_comp = inputs[0] * inputs[1]
     res_pe_bv = PE_bv(inst_gen(mux_out=[BitVector[1](1)]), inputs)
