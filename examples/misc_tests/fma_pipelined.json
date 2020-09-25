@@ -17,7 +17,7 @@
         },
         {
             "id": "alu_out",
-            "type": "alu",
+            "type": "add",
             "in0": "reg_out",
             "in1": "in2"
         },

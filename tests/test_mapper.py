@@ -47,25 +47,7 @@ def Mul_Add_fc(family : AbstractFamily):
             return a * b + c
     return Mul_Add
 
-# Really long
-@pytest.mark.skip
-@pytest.mark.parametrize("arch_file", ["examples/mapper_tests/test_alu4_alu4.json"])
-def test_4_bit_add(arch_file):
-    arch = read_arch(str(arch_file))
-    PE_fc = pe_arch_closure(arch)
 
-    ir_fc = Add_4_bit_fc
-
-    tic = time.perf_counter()
-
-    arch_mapper = ArchMapper(PE_fc)
-    ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
-    solution = ir_mapper.solve('z3')
-    pretty_print_binding(solution.ibinding)
-    assert solution is not None
-
-    toc = time.perf_counter()
-    print(f"{toc - tic:0.4f} seconds")
 
 @pytest.mark.parametrize("arch_file", ["examples/misc_tests/test_add.json"])
 def test_no_mapping(arch_file):

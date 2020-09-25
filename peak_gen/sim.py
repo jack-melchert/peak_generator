@@ -64,12 +64,7 @@ def pe_arch_closure(arch):
         Inst = Inst_fc(family)
         Cond = Cond_fc(family)
 
-        # DataInputList = Tuple[(Data for _ in range(arch.num_inputs))]
-        # BitInputList = Tuple[(Bit for _ in range(arch.num_bit_inputs))]
-
         DataInputList = Tuple[(Data if i < arch.num_inputs else Bit for i in range(arch.num_inputs + arch.num_bit_inputs))]
-
-        # BitInputListDefault = BitInputList(*[Bit(0) for _ in range(arch.num_bit_inputs)])
 
         Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
         Output_Tc = family.get_constructor(Output_T)
@@ -81,9 +76,6 @@ def pe_arch_closure(arch):
             N = Bit
             C = Bit
             V = Bit  
-
-        # Bit_Output_T = Tuple[(Bit for _ in range(arch.num_bit_outputs))]
-        # Bit_Output_Tc = family.get_constructor(Bit_Output_T)
 
         @family.assemble(locals(), globals())
         class PE(Peak, typecheck=True):
@@ -152,8 +144,6 @@ def pe_arch_closure(arch):
                     if inline(arch.modules[symbol_interpolate].type_ == 'lut'):
                         self.modules_symbol_interpolate: LUT = LUT()
 
-
-
             @end_rewrite()
             @if_inline()
             @loop_unroll()
@@ -161,19 +151,11 @@ def pe_arch_closure(arch):
             @begin_rewrite()
             @name_outputs(pe_outputs=Output_T)
             def __call__(self, inst: Const(Inst), \
-                inputs: DataInputList, \
-                # bit_inputs: BitInputList = BitInputListDefault, \
-                clk_en: Global(Bit) = Bit(1)
-            ) -> (Output_T):
-
-
-                # calculate lut results
-                # lut_res = self.lut(inst.lut, bit_inputs[0], bit_inputs[1], bit_inputs[2])
+                               inputs: DataInputList, \
+                               clk_en: Global(Bit) = Bit(1)) -> (Output_T):
 
                 signals = {}
                 bit_signals = {}
-
-                # lut_res = bit_inputs[0]
 
                 #  Inputs with or without registers
                 input_idx = 0

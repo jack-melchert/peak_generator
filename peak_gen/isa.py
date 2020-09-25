@@ -3,9 +3,7 @@ from .lut import LUT_t_fc
 from peak import Const, family_closure
 from hwtypes import Tuple, Product, Enum
 import magma as m
-"""
-https://github.com/StanfordAHA/CGRAGenerator/wiki/PE-Spec
-"""
+
 class Signed_t(Enum):
     unsigned = Enum.Auto() 
     signed = Enum.Auto()
@@ -72,48 +70,66 @@ def inst_arch_closure(arch):
 
         class Inst(Product):
 
+            at_least_one = False
+
             if arch.num_alu > 0:
                 alu = ALU_t_list_type
+                at_least_one = True
 
             if arch.num_bit_alu > 0:
                 bit_alu = BIT_ALU_t_list_type
+                at_least_one = True
 
             if arch.num_fp_alu > 0:
                 fp_alu = FP_ALU_t_list_type
+                at_least_one = True
             
             if arch.num_alu + arch.num_fp_alu + arch.num_sub + arch.num_gte + arch.num_lte > 0:
                 cond = Cond_t_list_type  
+                at_least_one = True
                 
             if arch.num_mul > 0:
                 mul = MUL_t_list_type
+                at_least_one = True
 
             if arch.num_const_inputs > 0:
                 const_data = Const_data_list_type
+                at_least_one = True
 
             if arch.num_mux_in0 > 0:
                 mux_in0 = mux_list_type_in0
+                at_least_one = True
 
             if arch.num_mux_in1 > 0:
                 mux_in1 = mux_list_type_in1
+                at_least_one = True
 
             if arch.num_mux_in2 > 0:
                 mux_in2 = mux_list_type_in2
+                at_least_one = True
 
             if arch.num_reg_mux > 0:
                 mux_reg = mux_list_type_reg
+                at_least_one = True
 
             if arch.num_output_mux > 0:
                 mux_out = mux_list_type_output
+                at_least_one = True
 
             if arch.num_bit_output_mux > 0:
                 mux_bit_out = mux_list_type_bit_output
+                at_least_one = True
 
             if arch.num_alu + arch.num_mul + arch.num_fp_alu + arch.num_gte + arch.num_lte + arch.num_shr > 0:
                 signed = Signed_list_type     # unsigned or signed
+                at_least_one = True
 
             if arch.num_lut > 0:
                 lut = LUT_list_type          # LUT operation as a 3-bit LUT
-
+                at_least_one = True
+            
+            if not at_least_one:
+                dummy = Bit
 
         return Inst
     return Inst_fc
