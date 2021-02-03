@@ -16,21 +16,22 @@ from peak.assembler.assembler import Assembler
 import pdb
 import json
 import copy 
+from pysmt.logics import QF_BV
 # from lassen.sim import PE_fc
 # from metamapper.irs.coreir.ir import gen_peak_CoreIR
 
-def peak_op_bw(width):
+def peak_op_bw():
     @family_closure
     def Peak_Op_fc(family: AbstractFamily):
-        Data = family.BitVector[width]
-        SData = family.Signed[width]
+        Data = family.BitVector[16]
+        SData = family.Signed[16]
         Bit = family.Bit
         @family.assemble(locals(), globals())
         class Peak_Op(Peak):
 
-            def __call__(self, in1 : Data, in2 : Data, in3 : Data, in4 : Data, in5 : Data, in0 : Data) -> Data:
+            def __call__(self, in1 : Bit, in0 : Bit, in2 : Bit) -> Bit:
                 
-                return Data(in5 + Data(in4 + Data(in3 + Data(in2 + Data(in0 + in1)))))
+                return in0 & in1 & in2
             
         return Peak_Op
     return Peak_Op_fc
@@ -40,20 +41,19 @@ def test_rr():
     # PE_fc = pe_arch_closure(arch)
     PE_fc = wrapped_peak_class(arch)
 
-    width = 16
 
     arch_mapper = ArchMapper(PE_fc)
 
 
-    ir_fc = peak_op_bw(width)
+    ir_fc = peak_op_bw()
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
 
 
-    solution = ir_mapper.solve('btor', external_loop=True)
+    solution = ir_mapper.solve()
 
 
     if solution is None: 
-        print("No solution found for width = ", width)
+        print("No solution found")
     else:
         # pretty_print_binding(solution.ibinding)
         # pretty_print_binding(solution.obinding) 

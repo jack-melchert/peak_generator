@@ -1,6 +1,6 @@
 {
     "outputs": [
-      "add"
+      ["add", "abs", "absd", "bit_alu", "gte", "lte", "mul", "shl", "shr"]
     ],
     "bit_outputs": [
       
@@ -24,12 +24,6 @@
       {
         "id": "absd",
         "type": "absd",
-        "in0": "in0",
-        "in1": "in1"
-      },
-      {
-        "id": "alu",
-        "type": "alu",
         "in0": "in0",
         "in1": "in1"
       },

@@ -15,7 +15,7 @@ from .sim import fp_pe_arch_closure, pe_arch_closure
 def exec_source(source, name, globals):
     path = ".ast_tools"
     file_name = os.path.join(path, f"{name}.py")
-    print(file_name)
+    
     os.makedirs(path, exist_ok=True)
     with open(file_name, 'w') as fp:
         fp.write(source)
@@ -34,7 +34,7 @@ def exec_source(source, name, globals):
     #Need to write out a file, then exec using 'compile'
     return _locals[name]
 
-def wrapped_peak_class(arch, fp=False):
+def wrapped_peak_class(arch, fp=False, debug=False):
 
     if fp:
         PE_fc = fp_pe_arch_closure(arch)
@@ -61,6 +61,7 @@ def wrapped_peak_class(arch, fp=False):
 
     tuple_inputs_str = ""
     constructed_tuples = ""
+    width = 16
 
 
     for name, type_ in inputs.field_dict.items(): 
@@ -140,7 +141,6 @@ def wrapped_peak_class(arch, fp=False):
     outputs_str = outputs_str[:-2]
     outputs_type_str = outputs_type_str[:-2]
     outputs_expanded = outputs_expanded[:-2]
-
     if fp:
         fp_str = '''
     from hwtypes import Product
@@ -177,7 +177,8 @@ def PE_wrapped_fc(family: AbstractFamily):
     
     return PE_wrapped
 '''
-    # print(new_peak_class) 
+    if debug:
+        print(new_peak_class) 
     _globals = dict(
         Peak=Peak,
         AbstractFamily=AbstractFamily,

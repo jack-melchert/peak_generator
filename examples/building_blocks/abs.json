@@ -1,0 +1,20 @@
+{
+    "outputs": [
+      ["abs"]
+    ],
+    "bit_outputs": [
+      
+    ],
+    "input_width": 16,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "abs",
+        "type": "abs",
+        "in0": "in0",
+        "in1": "in1"
+      }
+    ]
+}
+  

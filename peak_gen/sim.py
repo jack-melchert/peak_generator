@@ -101,6 +101,9 @@ def pe_arch_closure(arch):
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_reg)):
                     self.regs_symbol_interpolate: Register = Register()
 
+                for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_reg)):
+                    self.bit_regs_symbol_interpolate: Bit_Register = Bit_Register()
+
                 for symbol_interpolate in ast_tools.macros.unroll(range(len(arch.modules))):
                     if inline(arch.modules[symbol_interpolate].type_ == 'alu'):
                         self.modules_symbol_interpolate: type(ALU_bw(arch.modules[symbol_interpolate].in_width)) = ALU_bw(arch.modules[symbol_interpolate].in_width)()
@@ -185,6 +188,9 @@ def pe_arch_closure(arch):
                 # Pipelining registers
                 for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_reg)):
                     signals[arch.regs[symbol_interpolate].id] = self.regs_symbol_interpolate(Data(0), Bit(0))
+
+                for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_reg)):
+                    bit_signals[arch.bit_regs[symbol_interpolate].id] = self.bit_regs_symbol_interpolate(Bit(0), Bit(0))
 
    
                 mux_idx_in0 = 0
@@ -345,6 +351,21 @@ def pe_arch_closure(arch):
                                 in_ = signals[arch.regs[symbol_interpolate].in_[mux_inputs]]
                             
                     signals[arch.regs[symbol_interpolate].id] = self.regs_symbol_interpolate(in_, clk_en)
+                
+                bit_reg_mux_idx = 0
+                for symbol_interpolate in ast_tools.macros.unroll(range(arch.num_bit_reg)):
+                    if inline(len(arch.bit_regs[symbol_interpolate].in_) == 1):
+                        in_ = bit_signals[arch.bit_regs[symbol_interpolate].in_[0]]  
+                    else:
+                        in_mux_select = inst.mux_bit_reg[bit_reg_mux_idx]
+                        in_ = bit_signals[arch.bit_regs[symbol_interpolate].in_[0]]
+                        bit_reg_mux_idx = bit_reg_mux_idx + 1
+
+                        for mux_inputs in ast_tools.macros.unroll(range(len(arch.bit_regs[symbol_interpolate].in_))):
+                            if in_mux_select == family.BitVector[m.math.log2_ceil(len(arch.bit_regs[symbol_interpolate].in_))](mux_inputs):
+                                in_ = bit_signals[arch.bit_regs[symbol_interpolate].in_[mux_inputs]]
+                            
+                    bit_signals[arch.bit_regs[symbol_interpolate].id] = self.bit_regs_symbol_interpolate(in_, clk_en)
 
                 
                 # Output assignment
