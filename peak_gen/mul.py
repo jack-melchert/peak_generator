@@ -3,8 +3,8 @@ from peak.mapper.utils import rebind_type
 from functools import lru_cache
 from hwtypes import Enum
 import magma
-from ast_tools.passes import begin_rewrite, end_rewrite, loop_unroll, if_inline
-from ast_tools.macros import inline
+from ast_tools.passes import apply_passes, if_inline, loop_unroll
+from ast_tools.macros import inline, unroll
 from peak.family import AbstractFamily
 from .isa import Signed_t, MUL_t
 
@@ -25,9 +25,7 @@ def MUL_fc(family : AbstractFamily):
 
         @family.assemble(locals(), globals())
         class MUL(Peak):
-            @end_rewrite()
-            @if_inline()
-            @begin_rewrite()
+            @apply_passes([if_inline()])
             @name_outputs(res=Data_out)
             def __call__(self, instr: MUL_t, signed_: Signed_t, a:Data_in, b:Data_in) -> (Data_out):
 
