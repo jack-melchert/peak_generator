@@ -158,7 +158,7 @@ def pe_arch_closure(arch):
                 self.modules: modules_type = [mod() for mod in modules]
                 self.cond: cond_type = [cond() for cond in conds]
 
-            @apply_passes([loop_unroll(), if_inline()])
+            @apply_passes([loop_unroll(), loop_unroll(), if_inline()])
             @name_outputs(pe_outputs=Output_T)
             def __call__(self, inst: Const(Inst), \
                                inputs: DataInputList, \
@@ -392,8 +392,6 @@ def pe_arch_closure(arch):
                                 output_temp = signals[arch.outputs[out_index][mux_inputs]]
                         outputs.append(output_temp)
 
-                # for out_index in unroll(range(arch.num_bit_outputs)):
-                #     bit_outputs.append(bit_signals[arch.bit_outputs[out_index]])
 
                 for bit_out_index in unroll(range(arch.num_bit_outputs)):
                     if inline(len(arch.bit_outputs[bit_out_index]) == 1):
