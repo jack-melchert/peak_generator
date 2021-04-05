@@ -7,7 +7,6 @@ from peak.mapper import ArchMapper
 from peak.mapper.utils import pretty_print_binding
 from hwtypes import BitVector, Tuple, Bit
 import sys
-from timeit import default_timer as timer
 from peak import family
 from peak.family import AbstractFamily
 from peak.mapper import RewriteRule
@@ -17,6 +16,7 @@ import pdb
 import json
 import copy 
 from pysmt.logics import QF_BV
+import time
 # from lassen.sim import PE_fc
 # from metamapper.irs.coreir.ir import gen_peak_CoreIR
 
@@ -26,43 +26,47 @@ def peak_op_bw():
         Data = family.BitVector[16]
         SData = family.Signed[16]
         Bit = family.Bit
-        @family.assemble(locals(), globals())
+        # @family.assemble(locals(), globals())
         class Peak_Op(Peak):
 
-            def __call__(self, in1 : Bit, in0 : Bit, in2 : Bit) -> Bit:
-                
-                return in0 & in1 & in2
-            
+            def __call__(self, data176 : Data, data177 : Data, data178 : Data, data179 : Data, data180 : Data, data181 : Data, data182 : Data) -> Data:
+                return Data(Data(data177 * data178) + Data(Data(data179 * data180) + Data(Data(data181 * data182) + data176)))
+            # def __call__(self, data176 : Data, data177 : Data) -> Data:
+            #     return data177 + data176
         return Peak_Op
     return Peak_Op_fc
 
 def test_rr():
     arch = read_arch(str(sys.argv[1]))
     # PE_fc = pe_arch_closure(arch)
-    PE_fc = wrapped_peak_class(arch)
+    PE_fc = wrapped_peak_class(arch, debug=True)
+
+    constraints = {("inputs0",): ('data176',), ("inputs1",): ('data177',), ("inputs2",): ('data178',), ("inputs3",): ('data179',), ("inputs4",): ('data180',), ("inputs5",): ('data181',), ("inputs6",): ('data182',)}
 
 
-    arch_mapper = ArchMapper(PE_fc)
-
-
+    arch_mapper = ArchMapper(PE_fc, input_constraints=constraints)
+    # arch_mapper = ArchMapper(PE_fc)
     ir_fc = peak_op_bw()
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
 
+    start = time.time()
+    solution = ir_mapper.solve('z3')
+    end = time.time()
 
-    solution = ir_mapper.solve()
-
+    print("time elapsed:", end-start)
 
     if solution is None: 
         print("No solution found")
     else:
-        # pretty_print_binding(solution.ibinding)
+        print("Solution found!")
+        # print(solution.ibinding)
         # pretty_print_binding(solution.obinding) 
-        counter_example = solution.verify()
+    #     counter_example = solution.verify()
 
-        if counter_example is None:
-            print("Passed verification")
-        else:
-            print("Failed verification")
-            print(counter_example)
+    #     if counter_example is None:
+    #         print("Passed verification")
+    #     else:
+    #         print("Failed verification")
+    #         print(counter_example)
 
 test_rr()

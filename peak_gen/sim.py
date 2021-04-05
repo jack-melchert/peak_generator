@@ -153,7 +153,7 @@ def pe_arch_closure(arch):
 
                 self.regs: [Register for _ in range(arch.num_reg)] = [Register() for _ in range(arch.num_reg)]
 
-                self.bit_regs: [Register for _ in range(arch.num_bit_reg)] = [Register() for _ in range(arch.num_bit_reg)]
+                self.bit_regs: [Register for _ in range(arch.num_bit_reg)] = [Bit_Register() for _ in range(arch.num_bit_reg)]
 
                 self.modules: modules_type = [mod() for mod in modules]
                 self.cond: cond_type = [cond() for cond in conds]

@@ -144,13 +144,13 @@ def read_arch(json_file_str):
                     new_bit_reg.in_ = [new_bit_reg.in_]
 
                 for in0 in new_bit_reg.in_:
-                    if in0 not in inputs:
-                        inputs.append(in0)
+                    if in0 not in bit_inputs:
+                        bit_inputs.append(in0)
                 if len(new_bit_reg.in_) > 1:
                     num_bit_reg_mux += 1
 
-                if new_bit_reg.id in inputs:
-                    inputs.remove(new_bit_reg.id)
+                if new_bit_reg.id in bit_inputs:
+                    bit_inputs.remove(new_bit_reg.id)
 
                 if new_bit_reg.id in ids:
                     raise ValueError('Two modules with the same ID')
@@ -282,8 +282,8 @@ def read_arch(json_file_str):
         num_outputs = len(json_in['outputs'])
         num_bit_outputs = len(json_in['bit_outputs'])
 
-        #print(unique_inputs)
-        #print(unique_bit_inputs)
+        print(unique_inputs)
+        print(unique_bit_inputs)
         for module_ in modules:
             if not isinstance(module_.in0, list):
                 module_.in0 = [module_.in0]
@@ -341,10 +341,10 @@ def graph_arch(arch: Arch):
     inputs_subgraph.attr(rank='min')
 
     for input in arch.inputs:
-        inputs_subgraph.node(str(input), str(input), shape='circle')
+        inputs_subgraph.node(str(input), "in"+str(input), shape='circle')
 
     for bit_input in arch.bit_inputs:
-        inputs_subgraph.node(str(bit_input), str(bit_input), shape='circle')
+        inputs_subgraph.node(str(bit_input), "in"+str(bit_input), shape='circle')
 
     graph.subgraph(inputs_subgraph)
 
