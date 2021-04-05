@@ -7,8 +7,8 @@ from .common import BFloat16_fc
 from peak.family import MagmaFamily, SMTFamily
 from .isa import FP_ALU_t
 from .isa import Signed_t
-from ast_tools.passes import begin_rewrite, end_rewrite, if_inline
-from ast_tools.macros import inline
+from ast_tools.passes import apply_passes, if_inline, loop_unroll
+from ast_tools.macros import inline, unroll
 
 
 
@@ -85,9 +85,7 @@ def fp_unit_fc(family):
         @family.assemble(locals(), globals())
         class fp_unit(Peak):
 
-            @end_rewrite()
-            @if_inline()
-            @begin_rewrite()
+            @apply_passes([if_inline()])
             @name_outputs(res=Data, res_p=Bit, Z=Bit, N=Bit, C=Bit, V=Bit)
             def __call__(self, alu: FP_ALU_t, signed_: Signed_t, a: Data, b: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):
 
