@@ -5,6 +5,6 @@ setuptools
 -e git+git://github.com/leonardt/fault#egg=fault
 -e git+git://github.com/phanrahan/mantle#egg=mantle
 -e git+git://github.com/leonardt/hwtypes#egg=hwtypes
--e git+git://github.com/jack-melchert/ast_tools#egg=ast-tools
+ast-tools
 cosa
 jsonpickle
