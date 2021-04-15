@@ -138,7 +138,7 @@ def pe_arch_closure(arch):
             V = Bit  
 
         @family.assemble(locals(), globals())
-        class PE(Peak, typecheck=True):
+        class PE_gen(Peak, typecheck=True):
             @apply_passes([loop_unroll(), if_inline()])
             def __init__(self):
 
@@ -436,7 +436,7 @@ def pe_arch_closure(arch):
                         i += 1
                          
 
-        return PE
+        return PE_gen
     return PE_fc
 
 

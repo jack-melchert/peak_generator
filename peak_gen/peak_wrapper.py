@@ -166,16 +166,16 @@ def PE_wrapped_fc(family: AbstractFamily):
     Inst = Inst_fc(family)
 ''' + tuple_inputs_str + '''
     @family.assemble(locals(), globals())
-    class PE_wrapped(Peak):
+    class PE(Peak):
         def __init__(self):
-            self.PE : PE_fc(family) = PE_fc(family)()
+            self.PE_gen : PE_fc(family) = PE_fc(family)()
         '''+named_outputs+'''
         def __call__(self, ''' + new_inputs_str + ''') -> (''' + outputs_str + '''):
             ''' + constructed_tuples + '''
-            ''' + outputs_type_str + ''' = self.PE(''' + pe_call_inputs + ''')
+            ''' + outputs_type_str + ''' = self.PE_gen(''' + pe_call_inputs + ''')
             return ''' + outputs_expanded + '''
     
-    return PE_wrapped
+    return PE
 '''
     if debug:
         print(new_peak_class) 
