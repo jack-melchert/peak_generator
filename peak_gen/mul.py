@@ -29,6 +29,10 @@ def MUL_fc(family : AbstractFamily):
             @name_outputs(res=Data_out)
             def __call__(self, instr: MUL_t, signed_: Signed_t, a:Data_in, b:Data_in) -> (Data_out):
 
+                if instr == MUL_t.datagate:
+                    a = Data_in(0)
+                    b = Data_in(0)
+
                 if Bit(signed_ == Signed_t.signed):
                     mula, mulb = UDataMul(SData(a).sext(in_width)), UDataMul(SData(b).sext(in_width))
                 else:
