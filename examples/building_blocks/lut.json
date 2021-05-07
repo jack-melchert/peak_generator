@@ -1,0 +1,21 @@
+{
+    "outputs": [
+      
+    ],
+    "bit_outputs": [
+      ["lut"]
+    ],
+    "input_width": 16,
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "modules": [
+      {
+        "id": "lut",
+        "type": "lut",
+        "in0": "in0",
+        "in1": "in1",
+        "in2": "in2"
+      }
+    ]
+}
+  

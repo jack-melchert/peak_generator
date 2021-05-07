@@ -499,3 +499,4 @@ def graph_arch(arch: Arch):
 
     # print(graph.source)
     graph.render("arch_graph", view=False)
+

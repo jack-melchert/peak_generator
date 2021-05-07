@@ -40,8 +40,9 @@ class FP_ALU_t(Enum):
     FCnvInt2F = Enum.Auto()
 
 class MUL_t(Enum):
-    Mult0 = Enum.Auto()
-    Mult1 = Enum.Auto()
+    Mult0 = 0
+    Mult1 = 1
+    datagate = 2
 
 
 def inst_arch_closure(arch):
