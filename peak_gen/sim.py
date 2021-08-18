@@ -304,7 +304,7 @@ def pe_arch_closure(arch):
                             bit_signals[arch.modules[symbol_interpolate].id] = self.cond[cond_idx](inst.cond[cond_idx], alu_res_p, Z, N, C, V)
                             cond_idx = cond_idx + 1
                         elif inline(arch.modules[symbol_interpolate].type_ == "abs"):
-                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules[symbol_interpolate](in0, in1)
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules[symbol_interpolate](in0)
                             bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
                         elif inline(arch.modules[symbol_interpolate].type_ == "gte"):
                             signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules[symbol_interpolate](inst.signed[signed_idx], in0, in1)

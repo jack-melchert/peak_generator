@@ -16,10 +16,10 @@ def ABS_fc(family : AbstractFamily):
         @family.assemble(locals(), globals())
         class ABS(Peak):
             @name_outputs(res=Data, res_p=Bit, Z=Bit, N=Bit, C=Bit, V=Bit)
-            def __call__(self, a: Data, b: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):
+            def __call__(self, a: Data) -> (Data, Bit, Bit, Bit, Bit, Bit):
 
-                abs_pred = UData(a) >= UData(0)
-                res, res_p = abs_pred.ite(a, UData(-SInt[width](a))), Bit(a[-1])
+                temp_abs = UData(a) < UData(0)
+                res, res_p = temp_abs.ite(Data(-UData(a)), Data(UData(a))), Bit(0)
                 V = Bit(0)
                 C = Bit(0)
                 N = Bit(res[-1])
