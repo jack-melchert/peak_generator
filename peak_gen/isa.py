@@ -41,8 +41,8 @@ class FP_ALU_t(Enum):
 
 class MUL_t(Enum):
     Mult0 = 0
-    Mult1 = 1
-    datagate = 2
+    datagate = 1
+    # Mult1 = 1
 
 
 def inst_arch_closure(arch):

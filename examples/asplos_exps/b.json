@@ -1,6 +1,6 @@
 {
     "outputs": [
-      ["sub","add", "bit_alu", "gte", "lte", "mul", "shl", "shr", "mux"]
+      ["sub","add","absd", "bit_alu", "gte", "lte", "mul", "shl", "shr", "mux"]
     ],
     "bit_outputs": [
       ["sub", "lte", "gte", "lut"]
@@ -43,14 +43,14 @@
         "type": "lut"
       },
       {
-        "id": "add",
-        "type": "add",
+        "id": "sub",
+        "type": "sub",
         "in0": ["in0", "const0"],
         "in1": ["in1", "const1"]
       },
       {
-        "id": "sub",
-        "type": "sub",
+        "id": "absd",
+        "type": "absd",
         "in0": ["in0", "const0"],
         "in1": ["in1", "const1"]
       },
@@ -76,6 +76,12 @@
         "id": "mul",
         "type": "mul",
         "in0": ["in0", "const0"],
+        "in1": ["in1", "const1"]
+      },
+      {
+        "id": "add",
+        "type": "add",
+        "in0": ["in0", "const0", "mul"],
         "in1": ["in1", "const1"]
       },
       {
