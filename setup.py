@@ -14,7 +14,9 @@ setup(
     ],
     install_requires=[
         "peak",
-        "mantle"
+        "mantle",
+        "jsonpickle",
+        "ast-tools"
     ],
     python_requires='>=3.6'
 )
