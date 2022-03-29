@@ -33,26 +33,26 @@ def MUL_fc(family : AbstractFamily):
                     a = Data_in(0)
                     b = Data_in(0)
 
-                # if Bit(signed_ == Signed_t.signed):
-                #     mula, mulb = UDataMul(SData(a).sext(in_width)), UDataMul(SData(b).sext(in_width))
-                # else:
-                #     mula, mulb = UData(a).zext(in_width), UData(b).zext(in_width)
+                if Bit(signed_ == Signed_t.signed):
+                    mula, mulb = UDataMul(SData(a).sext(in_width)), UDataMul(SData(b).sext(in_width))
+                else:
+                    mula, mulb = UData(a).zext(in_width), UData(b).zext(in_width)
 
 
-                mul = a * b
-                res = mul
-                # res=0
+                mul = mula * mulb
+                res = 0
 
-                # if inline(out_width == in_width):
-                #     # if instr == MUL_t.Mult0:
-                #     # elif instr == MUL_t.Mult1:
-                #     #     res = mul[8:24]
-                #     # else:
-                #     #     res = mul[in_width:2*in_width]
-                # elif inline(out_width == 2*in_width):
-                #     res = mul
-                # else:
-                #     res = mul[:out_width]
+                if inline(out_width == in_width):
+                    if instr == MUL_t.Mult0:
+                        res = mul[:16]
+                    elif instr == MUL_t.Mult1:
+                        res = mul[8:24]
+                    # else:
+                    #     res = mul[in_width:2*in_width]
+                elif inline(out_width == 2*in_width):
+                    res = mul
+                else:
+                    res = mul[:out_width]
                     
                 return res
 
