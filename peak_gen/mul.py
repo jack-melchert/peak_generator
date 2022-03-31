@@ -40,7 +40,7 @@ def MUL_fc(family : AbstractFamily):
 
 
                 mul = mula * mulb
-                res = 0
+                res = Data_in(0)
 
                 if inline(out_width == in_width):
                     if instr == MUL_t.Mult0:
