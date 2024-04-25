@@ -1,4 +1,5 @@
 from .cond import Cond_t
+from .mode import Mode_t
 from .lut import LUT_t_fc
 from peak import Const, family_closure
 from hwtypes import Tuple, Product, Enum
@@ -53,6 +54,10 @@ def inst_arch_closure(arch):
 
         LUT_t, _ = LUT_t_fc(family)
 
+        Mode_t_type = Tuple[(Mode_t for _ in range(arch.num_inputs))]
+        RegConst_t_type = Tuple[(Data for _ in range(arch.num_inputs))]
+        Bit_Mode_t_type = Tuple[(Mode_t for _ in range(arch.num_bit_inputs))]
+        BitRegConst_t_type = Tuple[(Bit for _ in range(arch.num_bit_inputs))]
         ALU_t_list_type = Tuple[(ALU_t for _ in range(arch.num_alu))]
         BIT_ALU_t_list_type = Tuple[(BIT_ALU_t for _ in range(arch.num_bit_alu))]
         FP_ALU_t_list_type = Tuple[(FP_ALU_t for _ in range(arch.num_fp_alu))]
@@ -72,6 +77,17 @@ def inst_arch_closure(arch):
         class Inst(Product):
 
             at_least_one = False
+
+            if arch.num_inputs > 0 and arch.enable_input_regs:
+                input_reg_mode = Mode_t_type
+                input_reg_const = RegConst_t_type
+                at_least_one = True
+
+            if arch.num_bit_inputs > 0 and arch.enable_input_regs:
+                bit_input_reg_mode = Bit_Mode_t_type
+                bit_input_reg_const = BitRegConst_t_type
+                at_least_one = True
+
 
             if arch.num_alu > 0:
                 alu = ALU_t_list_type

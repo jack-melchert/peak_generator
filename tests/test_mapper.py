@@ -18,6 +18,17 @@ def Add_fc(family : AbstractFamily):
             return a + b
     return Add
 
+
+@family_closure
+def Add_const_fc(family : AbstractFamily):
+    Data = family.BitVector[16]
+    Data32 = family.BitVector[32]
+    @family.assemble(locals(), globals())
+    class Add(Peak):
+        def __call__(self, a:Data) -> Data:
+            return a + 5
+    return Add
+
 @family_closure
 def Add_4_ins_fc(family : AbstractFamily):
     Data = family.BitVector[16]
@@ -62,6 +73,38 @@ def test_no_mapping(arch_file):
     ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
     solution = ir_mapper.solve('z3')
     assert solution is None
+
+    toc = time.perf_counter()
+    print(f"{toc - tic:0.4f} seconds")
+
+
+@pytest.mark.parametrize("arch_file", ["examples/misc_tests/test_add_input_reg.json"])
+def test_add_const_files(arch_file):
+    arch = read_arch(str(arch_file))
+    PE_fc = pe_arch_closure(arch)
+
+    ir_fc = Add_fc
+
+    tic = time.perf_counter()
+
+    arch_mapper = ArchMapper(PE_fc)
+    ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
+    solution = ir_mapper.solve('z3')
+    pretty_print_binding(solution.ibinding)
+    assert solution is not None
+
+    toc = time.perf_counter()
+    print(f"{toc - tic:0.4f} seconds")
+
+    ir_fc = Add_const_fc
+
+    tic = time.perf_counter()
+
+    arch_mapper = ArchMapper(PE_fc)
+    ir_mapper = arch_mapper.process_ir_instruction(ir_fc)
+    solution = ir_mapper.solve('z3')
+    pretty_print_binding(solution.ibinding)
+    assert solution is not None
 
     toc = time.perf_counter()
     print(f"{toc - tic:0.4f} seconds")

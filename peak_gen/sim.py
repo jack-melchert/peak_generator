@@ -30,6 +30,9 @@ from peak.assembler import Assembler, AssembledADT
 from peak.family import AbstractFamily
 import peak 
 
+from .mode import Mode_t
+from .mode import gen_register_mode, gen_bit_mode
+
 def pe_arch_closure(arch):
     @family_closure
     def PE_fc(family: AbstractFamily):
@@ -39,8 +42,10 @@ def pe_arch_closure(arch):
         Out_Data = family.BitVector[arch.output_width]
 
         Bit = family.Bit
-        Register = gen_register(Data, 0)(family)
-        Bit_Register = gen_register(Bit, 0)(family)
+        # Register = gen_register(Data, 0)(family)
+        # Bit_Register = gen_register(Bit, 0)(family)
+        Register = gen_register_mode(arch.input_width, 0)(family)
+        Bit_Register = gen_bit_mode(0)(family)
 
         ALU_bw = ALU_fc(family)
         BIT_ALU_bw = BIT_ALU_fc(family)
@@ -129,6 +134,8 @@ def pe_arch_closure(arch):
         Output_T = Tuple[(Out_Data if i < arch.num_outputs else Bit for i in range(arch.num_outputs + arch.num_bit_outputs))]
         Output_Tc = family.get_constructor(Output_T)
 
+        mode_c = family.get_adt_t(Mode_t)
+
         class fp_val(Product):
             res = Data
             res_p = Bit
@@ -171,10 +178,10 @@ def pe_arch_closure(arch):
                 input_idx = 0
                 if inline(arch.enable_input_regs):
                     for input_reg_idx in unroll(range(arch.num_inputs)):
-                        signals[arch.inputs[input_reg_idx]] = self.input_regs[input_reg_idx](inputs[input_idx], clk_en)
+                        signals[arch.inputs[input_reg_idx]],_ = self.input_regs[input_reg_idx](inst.input_reg_mode[input_reg_idx], inst.input_reg_const[input_reg_idx], inputs[input_idx], clk_en, Bit(0),  Data(0))
                         input_idx = input_idx + 1
                     for symbol_interpolate in unroll(range(arch.num_bit_inputs)):
-                        bit_signals[arch.bit_inputs[symbol_interpolate]] = self.bit_input_regs[symbol_interpolate](inputs[input_idx], clk_en)
+                        bit_signals[arch.bit_inputs[symbol_interpolate]],_ = self.bit_input_regs[symbol_interpolate](inst.bit_input_reg_mode[symbol_interpolate], inst.bit_input_reg_const[symbol_interpolate], inputs[input_idx], clk_en, Bit(0),  Bit(0))
                         input_idx = input_idx + 1
                         
                 else:
@@ -304,7 +311,7 @@ def pe_arch_closure(arch):
                             bit_signals[arch.modules[symbol_interpolate].id] = self.cond[cond_idx](inst.cond[cond_idx], alu_res_p, Z, N, C, V)
                             cond_idx = cond_idx + 1
                         elif inline(arch.modules[symbol_interpolate].type_ == "abs"):
-                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules[symbol_interpolate](in0)
+                            signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules[symbol_interpolate](in0, in1)
                             bit_signals[arch.modules[symbol_interpolate].id] = alu_res_p
                         elif inline(arch.modules[symbol_interpolate].type_ == "gte"):
                             signals[arch.modules[symbol_interpolate].id], alu_res_p, Z, N, C, V = self.modules[symbol_interpolate](inst.signed[signed_idx], in0, in1)
