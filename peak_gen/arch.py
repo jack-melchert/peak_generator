@@ -282,8 +282,8 @@ def read_arch(json_file_str):
         num_outputs = len(json_in['outputs'])
         num_bit_outputs = len(json_in['bit_outputs'])
 
-        print(unique_inputs)
-        print(unique_bit_inputs)
+        #print(unique_inputs)
+        #print(unique_bit_inputs)
         for module_ in modules:
             if not isinstance(module_.in0, list):
                 module_.in0 = [module_.in0]
